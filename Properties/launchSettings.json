@@ -1,0 +1,21 @@
+﻿{
+  "profiles": {
+    "TelegramBudget": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "DOMAIN": "",
+        "PORT": "8080",
+        "CONNECTION_STRING": "Server=localhost;Port=5432;Database=telegram-budget;User Id=postgres;Password=postgres",
+
+        "TELEGRAM_BOT_TOKEN": "",
+        "TELEGRAM_BOT_AUTHORIZED_USER_IDS": "",
+        "TELEGRAM_BOT_WEBHOOK_SECRET_TOKEN": "",
+
+        "SENTRY_DSN": ""
+      }
+    }
+  }
+}
