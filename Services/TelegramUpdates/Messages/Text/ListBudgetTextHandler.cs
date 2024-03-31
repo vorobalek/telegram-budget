@@ -7,22 +7,12 @@ using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class ListBudgetTextHandler : ITextHandler
+public class ListBudgetTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public ListBudgetTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/list");
@@ -30,8 +20,8 @@ public class ListBudgetTextHandler : ITextHandler
 
     public async Task ProcessAsync(Message message, CancellationToken cancellationToken)
     {
-        var user = await _db.Users.SingleAsync(e => e.Id == _currentUserService.TelegramUser.Id, cancellationToken);
-        var budgets = await _db
+        var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
+        var budgets = await db
             .Budgets
             .Select(e => new
             {
@@ -45,10 +35,10 @@ public class ListBudgetTextHandler : ITextHandler
 
         if (!budgets.Any())
         {
-            await _bot
+            await bot
                 .SendTextMessageAsync(
-                    _currentUserService.TelegramUser.Id,
-                    "❌ У вас пока нет бюджетов. Создайте новый, используя команду /create",
+                    currentUserService.TelegramUser.Id,
+                    TR.L+"NO_BUDGETS",
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             return;
@@ -57,10 +47,7 @@ public class ListBudgetTextHandler : ITextHandler
         await budgets.SendPaginatedAsync(
             (pageBuilder, pageNumber) =>
             {
-                pageBuilder.AppendLine($"✅ <b>Список доступных бюджетов</b> <i>(страница {pageNumber})</i>");
-                pageBuilder.AppendLine();
-                pageBuilder.AppendLine("<i>Жирным шрифтом отмечен активный активный бюджет.</i>");
-                pageBuilder.AppendLine();
+                pageBuilder.Append(string.Format(TR.L+"LIST_INTRO", pageNumber));
             },
             budget =>
             {
@@ -70,11 +57,13 @@ public class ListBudgetTextHandler : ITextHandler
 
                 return $"{@in}{budget.Name.EscapeHtml()}{@out} " +
                        $"➡️ {@in}{budget.Sum:0.00}{@out} " +
+                       "<i>(" +
                        (budget.Owner is not { } owner
-                           ? "<i>(владелец неизвестен)</i> "
-                           : owner.Id == _currentUserService.TelegramUser.Id
-                               ? "<i>(владелец – вы)</i> "
-                               : $"<i>(владелец – {budget.Owner.GetFullNameLink()})</i> ");
+                           ? TR.L+"OWNER_UNKNOWN"
+                           : owner.Id == currentUserService.TelegramUser.Id
+                               ? TR.L+"OWNER_YOU"
+                               : string.Format(TR.L+"OWNER_USER", budget.Owner.GetFullNameLink())) + 
+                       ")</i>";
             },
             (pageBuilder, currentString) =>
             {
@@ -82,9 +71,9 @@ public class ListBudgetTextHandler : ITextHandler
                 pageBuilder.AppendLine(currentString);
             },
             async (pageContent, token) =>
-                await _bot
+                await bot
                     .SendTextMessageAsync(
-                        _currentUserService.TelegramUser.Id,
+                        currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
                         cancellationToken: token),

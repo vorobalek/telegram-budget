@@ -2,27 +2,18 @@ using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.EditedMessages.Text;
 
-public class TransactionTextEditedHandler : ITextEditedHandler
+public class TransactionTextEditedHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextEditedHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public TransactionTextEditedHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return decimal.TryParse(message.Text!.Trim().Split()[0], out _);
@@ -30,12 +21,12 @@ public class TransactionTextEditedHandler : ITextEditedHandler
 
     public async Task ProcessAsync(Message message, CancellationToken cancellationToken)
     {
-        var user = await _db.Users.SingleAsync(e => e.Id == _currentUserService.TelegramUser.Id, cancellationToken);
+        var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
 
-        var candidateTransaction = await _db
+        var candidateTransaction = await db
             .Transactions
             .FirstOrDefaultAsync(e =>
-                    e.CreatedBy == _currentUserService.TelegramUser.Id &&
+                    e.CreatedBy == currentUserService.TelegramUser.Id &&
                     e.MessageId == message.MessageId,
                 cancellationToken);
 
@@ -51,8 +42,8 @@ public class TransactionTextEditedHandler : ITextEditedHandler
         candidateTransaction.Comment = message.Text!.Trim().Length > rawAmount.Length
             ? message.Text!.Trim()[rawAmount.Length..].Trim().Truncate(250)
             : null;
-        _db.Transactions.Update(candidateTransaction);
-        await _db.SaveChangesAsync(cancellationToken);
+        db.Transactions.Update(candidateTransaction);
+        await db.SaveChangesAsync(cancellationToken);
 
         var newBudgetSum = candidateTransaction.Budget.Transactions.Sum(e => e.Amount);
 
@@ -62,7 +53,7 @@ public class TransactionTextEditedHandler : ITextEditedHandler
                 x => x.MessageId);
 
         foreach (var participating in candidateTransaction.Budget.Participating)
-            await _bot
+            await bot
                 .SendTextMessageAsync(
                     participating.ParticipantId,
                     $"💰 <b>{candidateTransaction.Budget.Name.EscapeHtml()}</b> 💰" +
@@ -88,8 +79,10 @@ public class TransactionTextEditedHandler : ITextEditedHandler
                     (candidateTransaction.Comment ?? string.Empty) +
                     Environment.NewLine +
                     Environment.NewLine +
-                    $"<i>изменено {(user.TimeZone == TimeSpan.Zero ? candidateTransaction.CreatedAt.ToString("dd.MM.yyyy HH:mm") + " UTC" : candidateTransaction.CreatedAt.Add(user.TimeZone).ToString("dd.MM.yyyy HH:mm"))} " +
-                    $"{_currentUserService.TelegramUser.GetFullNameLink()}</i>",
+                    $"<i>{TR.L+"EDITED_NOTICE"} {(user.TimeZone == TimeSpan.Zero 
+                        ? TR.L+candidateTransaction.CreatedAt+AppConfiguration.DateTimeFormat + " UTC" 
+                        : TR.L+candidateTransaction.CreatedAt.Add(user.TimeZone)+AppConfiguration.DateTimeFormat)} " +
+                    $"{currentUserService.TelegramUser.GetFullNameLink()}</i>",
                     replyToMessageId: participatingConfirmationMap.TryGetValue(participating.ParticipantId,
                         out var messageId)
                         ? messageId

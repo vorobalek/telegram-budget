@@ -8,22 +8,12 @@ using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class ShareBudgetInternalTextHandler : ITextHandler
+public class GrantBudgetInternalTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public ShareBudgetInternalTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/share_") &&
@@ -38,33 +28,33 @@ public class ShareBudgetInternalTextHandler : ITextHandler
         var args = message.Text!.Trim()["/share_".Length..].Split('_');
         var budgetId = Guid.Parse(args[1]);
 
-        if (await _db
+        if (await db
                 .Budgets
                 .FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budgetToShare)
             return;
 
         var userToShareId = long.Parse(args[0]);
-        var userToShare = await _db
+        var userToShare = await db
             .Users
             .SingleAsync(e => e.Id == userToShareId, cancellationToken);
 
-        if (await _db
+        if (await db
                 .Participating
                 .AnyAsync(e =>
                         e.ParticipantId == userToShareId &&
                         e.BudgetId == budgetId,
                     cancellationToken))
         {
-            await _bot
+            await bot
                 .SendTextMessageAsync(
-                    _currentUserService.TelegramUser.Id,
-                    $"❌ Пользователь {userToShare.GetFullNameLink()} уже имеет доступ к бюджету с именем &quot;{budgetToShare.Name.EscapeHtml()}&quot;",
+                    currentUserService.TelegramUser.Id,
+                    string.Format(TR.L+"ALREADY_GRANTED", userToShare.GetFullNameLink(), budgetToShare.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             return;
         }
 
-        var participantIds = await _db
+        var participantIds = await db
             .Participating
             .Where(e => e.BudgetId == budgetToShare.Id)
             .Select(e => e.ParticipantId)
@@ -75,31 +65,28 @@ public class ShareBudgetInternalTextHandler : ITextHandler
             Participant = userToShare,
             Budget = budgetToShare
         };
-        await _db.Participating.AddAsync(newParticipant, cancellationToken);
+        await db.Participating.AddAsync(newParticipant, cancellationToken);
 
         budgetToShare.Participating.Add(newParticipant);
-        _db.Budgets.Update(budgetToShare);
+        db.Budgets.Update(budgetToShare);
 
         userToShare.ActiveBudget ??= budgetToShare;
-        _db.Users.Update(userToShare);
+        db.Users.Update(userToShare);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         foreach (var participantId in participantIds)
-            await _bot
+            await bot
                 .SendTextMessageAsync(
                     participantId,
-                    $"✅ Доступ к бюдету с именем &quot;{budgetToShare.Name.EscapeHtml()}&quot; предоставлен {userToShare.GetFullNameLink()}" +
-                    Environment.NewLine +
-                    Environment.NewLine +
-                    $"<i>Инициатор: {_currentUserService.TelegramUser.GetFullNameLink()}</i>",
+                    string.Format(TR.L+"GRANTED_TO_USER", budgetToShare.Name.EscapeHtml(), userToShare.GetFullNameLink(), currentUserService.TelegramUser.GetFullNameLink()),
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
 
-        await _bot
+        await bot
             .SendTextMessageAsync(
                 userToShare.Id,
-                $"❗ Вам предоставлен доступ к бюджету &quot;{budgetToShare.Name.EscapeHtml()}&quot; пользователем {_currentUserService.TelegramUser.GetFullNameLink()}",
+                string.Format(TR.L+"GRANTED_TO_YOU", budgetToShare.Name.EscapeHtml(), currentUserService.TelegramUser.GetFullNameLink()),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }

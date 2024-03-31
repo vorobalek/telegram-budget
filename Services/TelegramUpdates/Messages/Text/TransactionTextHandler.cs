@@ -2,28 +2,19 @@ using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class TransactionTextHandler : ITextHandler
+public class TransactionTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public TransactionTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return decimal.TryParse(message.Text!.Trim().Split()[0], out _);
@@ -31,14 +22,14 @@ public class TransactionTextHandler : ITextHandler
 
     public async Task ProcessAsync(Message message, CancellationToken cancellationToken)
     {
-        var user = await _db.Users.SingleAsync(e => e.Id == _currentUserService.TelegramUser.Id, cancellationToken);
+        var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
 
         if (user.ActiveBudget is null)
         {
-            await _bot
+            await bot
                 .SendTextMessageAsync(
-                    _currentUserService.TelegramUser.Id,
-                    "❌ У вас не выбран активный бюджет. Установите его командой /switch",
+                    currentUserService.TelegramUser.Id,
+                    TR.L+"NO_ACTIVE_BUDGET",
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             return;
@@ -58,15 +49,15 @@ public class TransactionTextHandler : ITextHandler
                 : null
         };
 
-        await _db.Transactions.AddAsync(newTransaction, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.Transactions.AddAsync(newTransaction, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         var newBudgetSum = user.ActiveBudget.Transactions.Sum(e => e.Amount);
 
         var needSaveChange = false;
         foreach (var participating in user.ActiveBudget.Participating)
         {
-            var confirmationMessage = await _bot
+            var confirmationMessage = await bot
                 .SendTextMessageAsync(
                     participating.ParticipantId,
                     $"💰 <b>{user.ActiveBudget.Name.EscapeHtml()}</b> 💰" +
@@ -82,11 +73,17 @@ public class TransactionTextHandler : ITextHandler
                         : string.Empty) +
                     Environment.NewLine +
                     Environment.NewLine +
-                    $"<i>добавлено {(user.TimeZone == TimeSpan.Zero ? newTransaction.CreatedAt.ToString("dd.MM.yyyy HH:mm") + " UTC" : newTransaction.CreatedAt.Add(user.TimeZone).ToString("dd.MM.yyyy HH:mm"))} " +
-                    $"{_currentUserService.TelegramUser.GetFullNameLink()}</i>",
+                    "<i>" +
+                    string.Format(
+                        TR.L+"ADDED_NOTICE", 
+                        user.TimeZone == TimeSpan.Zero 
+                            ? TR.L+newTransaction.CreatedAt+AppConfiguration.DateTimeFormat + " UTC" 
+                            : TR.L+newTransaction.CreatedAt.Add(user.TimeZone)+AppConfiguration.DateTimeFormat, 
+                        currentUserService.TelegramUser.GetFullNameLink()) +
+                    "</i>",
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
-            await _db.TransactionConfirmations.AddAsync(new TransactionConfirmation
+            await db.TransactionConfirmations.AddAsync(new TransactionConfirmation
             {
                 MessageId = confirmationMessage.MessageId,
                 RecipientId = participating.ParticipantId,
@@ -96,6 +93,6 @@ public class TransactionTextHandler : ITextHandler
         }
 
         if (needSaveChange)
-            await _db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
     }
 }

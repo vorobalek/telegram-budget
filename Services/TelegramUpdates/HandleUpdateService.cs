@@ -9,31 +9,19 @@ using User = TelegramBudget.Data.Entities.User;
 
 namespace TelegramBudget.Services.TelegramUpdates;
 
-internal sealed class HandleUpdateService : IHandleUpdateService
+internal sealed class HandleUpdateService(
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db,
+    ITelegramBotClient bot,
+    IEnumerable<IUpdateHandler> handlers)
+    : IHandleUpdateService
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-    private readonly IEnumerable<IUpdateHandler> _handlers;
-
-    public HandleUpdateService(
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db,
-        ITelegramBotClient bot,
-        IEnumerable<IUpdateHandler> handlers)
-    {
-        _currentUserService = currentUserService;
-        _db = db;
-        _bot = bot;
-        _handlers = handlers;
-    }
-
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        _currentUserService.TelegramUser = update.GetUser();
-        await _bot
+        currentUserService.TelegramUser = update.GetUser();
+        await bot
             .SendChatActionAsync(
-                _currentUserService.TelegramUser.Id,
+                currentUserService.TelegramUser.Id,
                 ChatAction.Typing,
                 cancellationToken: cancellationToken);
 
@@ -53,47 +41,47 @@ internal sealed class HandleUpdateService : IHandleUpdateService
 
     private async Task CreateUserAsync(CancellationToken cancellationToken)
     {
-        await _db.Users.AddAsync(new User
+        await db.Users.AddAsync(new User
         {
-            Id = _currentUserService.TelegramUser.Id,
-            FirstName = _currentUserService.TelegramUser.FirstName,
-            LastName = _currentUserService.TelegramUser.LastName
+            Id = currentUserService.TelegramUser.Id,
+            FirstName = currentUserService.TelegramUser.FirstName,
+            LastName = currentUserService.TelegramUser.LastName
         }, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task UpdateUserAsync(User user, CancellationToken cancellationToken)
     {
-        user.FirstName = _currentUserService.TelegramUser.FirstName;
-        user.LastName = _currentUserService.TelegramUser.LastName;
-        _db.Update(user);
-        await _db.SaveChangesAsync(cancellationToken);
+        user.FirstName = currentUserService.TelegramUser.FirstName;
+        user.LastName = currentUserService.TelegramUser.LastName;
+        db.Update(user);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<User?> GetUserAsync(CancellationToken cancellationToken)
     {
-        return await _db.Users.SingleOrDefaultAsync(
-            e => e.Id == _currentUserService.TelegramUser.Id,
+        return await db.Users.SingleOrDefaultAsync(
+            e => e.Id == currentUserService.TelegramUser.Id,
             cancellationToken);
     }
 
     private async Task SendUserIdAsync(CancellationToken cancellationToken)
     {
-        await _bot.SendTextMessageAsync(
-            _currentUserService.TelegramUser.Id,
-            _currentUserService.TelegramUser.Id.ToString(),
+        await bot.SendTextMessageAsync(
+            currentUserService.TelegramUser.Id,
+            currentUserService.TelegramUser.Id.ToString(),
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
     }
 
     private Task<bool> UserIsAuthorizedAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult(TelegramBotConfiguration.AuthorizedUserIds.Contains(_currentUserService.TelegramUser.Id));
+        return Task.FromResult(TelegramBotConfiguration.AuthorizedUserIds.Contains(currentUserService.TelegramUser.Id));
     }
 
     private async Task ProcessUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        await Task.WhenAll(_handlers
+        await Task.WhenAll(handlers
             .Where(e => e.TargetType == update.Type)
             .Select(e => e
                 .ProcessAsync(update, cancellationToken)));

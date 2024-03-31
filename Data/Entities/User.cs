@@ -62,12 +62,12 @@ public class User :
     // Telegram Id
     public long Id { get; set; }
 
-    public string GetFullName()
+    private string GetFullName()
     {
-        return $"{FirstName.EscapeHtml()}" +
-               $"{(LastName is not null
+        return (FirstName ?? Id.ToString()).EscapeHtml() +
+               (LastName is not null
                    ? " " + LastName.EscapeHtml()
-                   : string.Empty)}";
+                   : string.Empty);
     }
 
     public string GetFullNameLink()

@@ -8,21 +8,12 @@ using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class CreateBudgetTextHandler : ITextHandler
+public class CreateBudgetTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public CreateBudgetTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService, ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/create");
@@ -37,7 +28,7 @@ public class CreateBudgetTextHandler : ITextHandler
         if (await BudgetAlreadyExistsAsync(budgetName, cancellationToken))
             return;
 
-        var user = await _db.Users.SingleAsync(e => e.Id == _currentUserService.TelegramUser.Id, cancellationToken);
+        var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
         var newBudget = new Budget
         {
             Name = budgetName,
@@ -46,24 +37,24 @@ public class CreateBudgetTextHandler : ITextHandler
                 user
             }
         };
-        await _db.Budgets.AddAsync(newBudget, cancellationToken);
+        await db.Budgets.AddAsync(newBudget, cancellationToken);
 
         var participating = new Participating
         {
             Budget = newBudget,
             Participant = user
         };
-        await _db.Participating.AddAsync(participating, cancellationToken);
+        await db.Participating.AddAsync(participating, cancellationToken);
 
         user.ActiveBudget = newBudget;
-        _db.Update(user);
+        db.Update(user);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
-        await _bot
+        await bot
             .SendTextMessageAsync(
-                _currentUserService.TelegramUser.Id,
-                $"✅ Создан новый бюджет с именем &quot;{budgetName.EscapeHtml()}&quot;, установлен как активный.",
+                currentUserService.TelegramUser.Id,
+                string.Format(TR.L+"CREATED", budgetName.EscapeHtml()),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }
@@ -73,10 +64,10 @@ public class CreateBudgetTextHandler : ITextHandler
         var budgetName = message.Text!.Trim()["/create".Length..].Trim().Truncate(250);
         if (!string.IsNullOrWhiteSpace(budgetName)) return budgetName;
 
-        await _bot
+        await bot
             .SendTextMessageAsync(
-                _currentUserService.TelegramUser.Id,
-                "/create &lt;название бюджета&gt; - Создать ноый бюджет. Новый бюджет автоматически станет активным.",
+                currentUserService.TelegramUser.Id,
+                (TR.L+"CREATE").EscapeHtml(),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
         return null;
@@ -84,13 +75,13 @@ public class CreateBudgetTextHandler : ITextHandler
 
     private async Task<bool> BudgetAlreadyExistsAsync(string budgetName, CancellationToken cancellationToken)
     {
-        var budgetAlreadyExists = await _db.Budgets.AnyAsync(e => e.Name == budgetName, cancellationToken);
+        var budgetAlreadyExists = await db.Budgets.AnyAsync(e => e.Name == budgetName, cancellationToken);
         if (!budgetAlreadyExists) return false;
 
-        await _bot
+        await bot
             .SendTextMessageAsync(
-                _currentUserService.TelegramUser.Id,
-                $"❌ Бюджет с именем &quot;{budgetName.EscapeHtml()}&quot; уже существует.",
+                currentUserService.TelegramUser.Id,
+                string.Format(TR.L+"ALREADY_EXISTS", budgetName.EscapeHtml()),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
         return true;

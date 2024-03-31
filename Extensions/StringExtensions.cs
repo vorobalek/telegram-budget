@@ -2,10 +2,10 @@ namespace TelegramBudget.Extensions;
 
 public static class StringExtensions
 {
-    public static string? EscapeHtml(this string? input)
+    public static string EscapeHtml(this string input)
     {
         return input
-                ?.Replace("&", "&amp;")
+                .Replace("&", "&amp;")
                 .Replace("<", "&lt;")
                 .Replace(">", "&gt;")
                 .Replace("\"", "&quot;")

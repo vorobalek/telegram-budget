@@ -4,19 +4,11 @@ using Telegram.Bot.Types.Enums;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class MeTextHandler : ITextHandler
+public class MeTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-
-    public MeTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/me");
@@ -24,10 +16,10 @@ public class MeTextHandler : ITextHandler
 
     public Task ProcessAsync(Message message, CancellationToken cancellationToken)
     {
-        return _bot
+        return bot
             .SendTextMessageAsync(
-                _currentUserService.TelegramUser.Id,
-                _currentUserService.TelegramUser.Id.ToString(),
+                currentUserService.TelegramUser.Id,
+                currentUserService.TelegramUser.Id.ToString(),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }

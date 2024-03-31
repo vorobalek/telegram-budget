@@ -9,21 +9,14 @@ public interface IEditedMessageHandler
     Task ProcessAsync(Message message, CancellationToken cancellationToken);
 }
 
-public class TextEditedMessageHandler : IEditedMessageHandler
+public class TextEditedMessageHandler(IEnumerable<ITextEditedHandler> handlers) : IEditedMessageHandler
 {
-    private readonly IEnumerable<ITextEditedHandler> _handlers;
-
-    public TextEditedMessageHandler(IEnumerable<ITextEditedHandler> handlers)
-    {
-        _handlers = handlers;
-    }
-
     public MessageType TargetType => MessageType.Text;
 
     public Task ProcessAsync(Message message, CancellationToken cancellationToken)
     {
         return message.Text is not null
-            ? Task.WhenAll(_handlers
+            ? Task.WhenAll(handlers
                 .Where(e => e.ShouldBeInvoked(message))
                 .Select(e => e.ProcessAsync(message, cancellationToken)))
             : Task.CompletedTask;
