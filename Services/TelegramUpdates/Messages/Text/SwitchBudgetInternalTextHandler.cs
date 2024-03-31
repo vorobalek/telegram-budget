@@ -7,22 +7,12 @@ using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class SwitchBudgetInternalTextHandler : ITextHandler
+public class SwitchBudgetInternalTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public SwitchBudgetInternalTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/switch_") &&
@@ -33,23 +23,26 @@ public class SwitchBudgetInternalTextHandler : ITextHandler
     {
         var budgetId = Guid.Parse(message.Text!.Trim()["/switch_".Length..].Trim());
 
-        var user = await _db.Users.SingleAsync(e => e.Id == _currentUserService.TelegramUser.Id, cancellationToken);
-        if (await _db.Budgets.FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budget)
+        var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
+        if (await db.Budgets.FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budget)
             return;
 
         user.ActiveBudgetId = budget.Id;
-        _db.Users.Update(user);
-        await _db.SaveChangesAsync(cancellationToken);
+        db.Users.Update(user);
+        await db.SaveChangesAsync(cancellationToken);
 
-        await _bot
+        await bot
             .SendTextMessageAsync(
-                _currentUserService.TelegramUser.Id,
-                $"✅ Вашим активным бюджетом выбран &quot;{budget.Name.EscapeHtml()}&quot; " +
+                currentUserService.TelegramUser.Id,
+                string.Format(TR.L+"SWITCHED", budget.Name.EscapeHtml()) +
+                ' ' +
+                "<i>(" + 
                 (budget.Owner is not { } owner
-                    ? "<i>(владелец неизвестен)</i> "
-                    : owner.Id == _currentUserService.TelegramUser.Id
-                        ? "<i>(владелец – вы)</i> "
-                        : $"<i>(владелец – {budget.Owner.GetFullNameLink()})</i> "),
+                    ? TR.L+"OWNER_UNKNOWN"
+                    : owner.Id == currentUserService.TelegramUser.Id
+                        ? TR.L+"OWNER_YOU"
+                        : string.Format(TR.L+"OWNER_USER", budget.Owner.GetFullNameLink())) +
+                ")</i>",
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }

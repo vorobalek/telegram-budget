@@ -54,14 +54,9 @@ public class Budget :
 
     public Guid Id { get; set; }
 
-    public sealed class ChangeListener : EntityChangeListener<Budget>
+    public sealed class ChangeListener(ICurrentUserService currentUserService) : EntityChangeListener<Budget>
     {
-        private readonly ICurrentUserService _currentUserService;
-
-        public ChangeListener(ICurrentUserService currentUserService)
-        {
-            _currentUserService = currentUserService;
-        }
+        private readonly ICurrentUserService _currentUserService = currentUserService;
 
         protected override void OnModelCreating(EntityTypeBuilder<Budget> builder)
         {

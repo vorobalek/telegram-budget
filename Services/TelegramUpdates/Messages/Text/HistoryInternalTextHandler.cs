@@ -2,27 +2,18 @@ using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class HistoryInternalTextHandler : ITextHandler
+public class HistoryInternalTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public HistoryInternalTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/history_") &&
@@ -33,16 +24,16 @@ public class HistoryInternalTextHandler : ITextHandler
     {
         var budgetId = Guid.Parse(message.Text!.Trim()["/history_".Length..].Trim());
 
-        var user = await _db.Users.SingleAsync(e => e.Id == _currentUserService.TelegramUser.Id, cancellationToken);
-        if (await _db.Budgets.FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budget)
+        var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
+        if (await db.Budgets.FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budget)
             return;
 
         if (!budget.Transactions.Any())
         {
-            await _bot
+            await bot
                 .SendTextMessageAsync(
-                    _currentUserService.TelegramUser.Id,
-                    $"❌ У вас пока нет транзакций в бюджете с именем &quot;{budget.Name}&quot;. Начните добавлять транзакции: например,<b> -100 за кофе</b>",
+                    currentUserService.TelegramUser.Id,
+                    string.Format(TR.L+"NO_TRANSACTIONS", budget.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             return;
@@ -52,7 +43,7 @@ public class HistoryInternalTextHandler : ITextHandler
         await budget.Transactions.OrderBy(e => e.CreatedAt).SendPaginatedAsync(
             (pageBuilder, pageNumber) =>
                 pageBuilder.AppendLine(
-                    $"✅ <b>История транзакций по бюджету: &quot;{budget.Name}&quot;</b> <i>(страница {pageNumber})</i>"),
+                    string.Format(TR.L+"HISTORY_INTRO", budget.Name.EscapeHtml(), pageNumber)),
             transaction =>
             {
                 var currentString =
@@ -66,8 +57,14 @@ public class HistoryInternalTextHandler : ITextHandler
                         : string.Empty) +
                     Environment.NewLine +
                     Environment.NewLine +
-                    $"<i>добавлено {(user.TimeZone == TimeSpan.Zero ? transaction.CreatedAt.ToString("dd.MM.yyyy HH:mm") + " UTC" : transaction.CreatedAt.Add(user.TimeZone).ToString("dd.MM.yyyy HH:mm"))} " +
-                    $"{transaction.Author.GetFullNameLink()}</i>";
+                    "<i>" +
+                    string.Format(
+                        TR.L+"ADDED_NOTICE", 
+                        user.TimeZone == TimeSpan.Zero 
+                            ? TR.L+transaction.CreatedAt+AppConfiguration.DateTimeFormat + " UTC" 
+                            : TR.L+transaction.CreatedAt.Add(user.TimeZone)+AppConfiguration.DateTimeFormat, 
+                        transaction.Author.GetFullNameLink()) +
+                    "</i>";
                 currentAmount += transaction.Amount;
                 return currentString;
             },
@@ -78,9 +75,9 @@ public class HistoryInternalTextHandler : ITextHandler
                 pageBuilder.AppendLine(currentString);
             },
             async (pageContent, token) =>
-                await _bot
+                await bot
                     .SendTextMessageAsync(
-                        _currentUserService.TelegramUser.Id,
+                        currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
                         cancellationToken: token),

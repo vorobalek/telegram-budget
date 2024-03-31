@@ -1,6 +1,7 @@
+global using LPlus;
+
 using Common.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Sentry;
 using Telegram.Bot;
 using TelegramBudget.Configuration;
 using TelegramBudget.Data;
@@ -14,6 +15,22 @@ var host = Host
     {
         builder.ConfigureServices((context, services) =>
         {
+            TR.Configure(options =>
+            {
+                options.DetermineLanguageCodeDelegate = () => AppConfiguration.Locale;
+                options.BuildTranslationKeyDelegate = (languageCode, text) => $"Localization:{languageCode}:{text}";
+                options.TryGetTranslationDelegate = translationKey => context.Configuration.GetValue<string>(translationKey);
+#if DEBUG
+                var path = Path.Combine(
+                    context.HostingEnvironment.ContentRootPath,
+                    "missing-translation-keys.txt");
+                options.MissingTranslationKeyOutputDelegate = translationKey =>
+                {
+                    File.AppendAllLines(path,
+                        new[] { translationKey });
+                };
+#endif
+            });
             services
                 .AddHostedService<ConfigureWebhook>()
                 .AddHttpClient("Telegram.Webhook")

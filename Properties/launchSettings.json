@@ -8,11 +8,15 @@
 
         "DOMAIN": "",
         "PORT": "8080",
-        "CONNECTION_STRING": "Server=localhost;Port=5432;Database=telegram-budget;User Id=postgres;Password=postgres",
+        "CONNECTION_STRING": "",
 
         "TELEGRAM_BOT_TOKEN": "",
         "TELEGRAM_BOT_AUTHORIZED_USER_IDS": "",
         "TELEGRAM_BOT_WEBHOOK_SECRET_TOKEN": "",
+
+        "LOCALE": "en",
+        "DATE_FORMAT": "MM/dd/yyyy",
+        "DATETIME_FORMAT": "HH:mm MM/dd/yyyy",
 
         "SENTRY_DSN": ""
       }

@@ -7,22 +7,12 @@ using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Services.TelegramUpdates.Messages.Text;
 
-public class UnShareBudgetInternalTextHandler : ITextHandler
+public class RevokeBudgetInternalTextHandler(
+    ITelegramBotClient bot,
+    ICurrentUserService currentUserService,
+    ApplicationDbContext db)
+    : ITextHandler
 {
-    private readonly ITelegramBotClient _bot;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ApplicationDbContext _db;
-
-    public UnShareBudgetInternalTextHandler(
-        ITelegramBotClient bot,
-        ICurrentUserService currentUserService,
-        ApplicationDbContext db)
-    {
-        _bot = bot;
-        _currentUserService = currentUserService;
-        _db = db;
-    }
-
     public bool ShouldBeInvoked(Message message)
     {
         return message.Text!.Trim().StartsWith("/unshare_") &&
@@ -37,27 +27,27 @@ public class UnShareBudgetInternalTextHandler : ITextHandler
         var args = message.Text!.Trim()["/unshare_".Length..].Split('_');
         var budgetId = Guid.Parse(args[1]);
 
-        if (await _db
+        if (await db
                 .Budgets
                 .FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budgetToUnShare)
             return;
 
         var userToShareId = long.Parse(args[0]);
-        var userToUnShare = await _db
+        var userToUnShare = await db
             .Users
             .SingleAsync(e => e.Id == userToShareId, cancellationToken);
 
-        if (await _db
+        if (await db
                 .Participating
                 .FirstOrDefaultAsync(e =>
                         e.ParticipantId == userToUnShare.Id &&
                         e.BudgetId == budgetToUnShare.Id,
                     cancellationToken) is not { } participant)
         {
-            await _bot
+            await bot
                 .SendTextMessageAsync(
-                    _currentUserService.TelegramUser.Id,
-                    $"❌ Пользователь {userToUnShare.GetFullNameLink()} не имеет доступа к бюджету с именем &quot;{budgetToUnShare.Name.EscapeHtml()}&quot;",
+                    currentUserService.TelegramUser.Id,
+                    string.Format(TR.L+"ALREADY_REVOKED", userToUnShare.GetFullNameLink(), budgetToUnShare.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             return;
@@ -65,46 +55,43 @@ public class UnShareBudgetInternalTextHandler : ITextHandler
 
         if (budgetToUnShare.CreatedBy == userToUnShare.Id)
         {
-            await _bot
+            await bot
                 .SendTextMessageAsync(
-                    _currentUserService.TelegramUser.Id,
-                    $"❌ Пользователь {userToUnShare.GetFullNameLink()} не может быть лишен доступа к бюджету с именем &quot;{budgetToUnShare.Name.EscapeHtml()}&quot;, поскольку является его владельцем",
+                    currentUserService.TelegramUser.Id,
+                    string.Format(TR.L+"REVOKING_RESTRICTED", userToUnShare.GetFullNameLink(), budgetToUnShare.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             return;
         }
 
-        _db.Participating.Remove(participant);
+        db.Participating.Remove(participant);
 
         budgetToUnShare.Participating.Remove(participant);
-        _db.Budgets.Update(budgetToUnShare);
+        db.Budgets.Update(budgetToUnShare);
 
         userToUnShare.ActiveBudget ??= budgetToUnShare;
-        _db.Users.Update(userToUnShare);
+        db.Users.Update(userToUnShare);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
-        var participantIds = await _db
+        var participantIds = await db
             .Participating
             .Where(e => e.BudgetId == budgetToUnShare.Id)
             .Select(e => e.ParticipantId)
             .ToListAsync(cancellationToken);
 
         foreach (var participantId in participantIds)
-            await _bot
+            await bot
                 .SendTextMessageAsync(
                     participantId,
-                    $"✅ Доступ к бюджету с именем &quot;{budgetToUnShare.Name.EscapeHtml()}&quot; отозван у {userToUnShare.GetFullNameLink()}" +
-                    Environment.NewLine +
-                    Environment.NewLine +
-                    $"<i>Инициатор: {_currentUserService.TelegramUser.GetFullNameLink()}</i>",
+                    string.Format(TR.L+"REVOKED_FOR_USER", budgetToUnShare.Name.EscapeHtml(), userToUnShare.GetFullNameLink(), currentUserService.TelegramUser.GetFullNameLink()),
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
 
-        await _bot
+        await bot
             .SendTextMessageAsync(
                 userToUnShare.Id,
-                $"❗ У вас отозван доступ к бюдету &quot;{budgetToUnShare.Name.EscapeHtml()}&quot; пользователем {_currentUserService.TelegramUser.GetFullNameLink()}",
+                string.Format(TR.L+"REVOKED_FOR_YOU", budgetToUnShare.Name.EscapeHtml(), currentUserService.TelegramUser.GetFullNameLink()),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }

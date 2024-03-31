@@ -18,64 +18,58 @@ public static class TelegramBotConfiguration
     {
         new()
         {
-            Command = "/me",
-            Description = "/me - Получить свой номер."
-        },
-        new()
-        {
-            Command = "/timezone",
-            Description =
-                "/timezone <смещение от UTC в формате 00:00> - Установить свой часовой пояс. Требуется указать смещение от UTC."
-        },
-        new()
-        {
-            Command = "/create",
-            Description =
-                "/create <название бюджета> - Создать ноый бюджет. Новый бюджет автоматически станет активным."
-        },
-        new()
-        {
-            Command = "/switch",
-            Description = "/switch <название бюджета> - Переключить активный бюджет."
-        },
-        new()
-        {
-            Command = "/share",
-            Description =
-                "/share <номер пользователя> (<название бюджета>) - Предоставить доступ к бюджету другому пользователю. Название бюджета не обязательно. Без указания названия бюджета будет выбран активный бюджет."
-        },
-        new()
-        {
-            Command = "/unshare",
-            Description =
-                "/unshare <номер пользователя> (<название бюджета>) - Отозвать доступ к бюджету у другого пользователя. Название бюджета не обязательно. Без указания названия бюджета будет выбран активный бюджет."
+            Command = "/list",
+            Description = TR.L+"LIST"
         },
         new()
         {
             Command = "/history",
-            Description =
-                "/history (<название бюджета>) - Получить историю транзакций по бюджету. Название бюджета не обязательно. Без указания названия бюджета будет выбран активный бюджет."
+            Description = TR.L+"HISTORY"
         },
         new()
         {
-            Command = "/list",
-            Description = "/list - Получить список доступных бюджетов."
+            Command = "/me",
+            Description = TR.L+"ME"
         },
         new()
         {
-            Command = "/remove",
-            Description =
-                "/remove (<название бюджета>) - Удалить бюджет. Все транзакции будут безвозвратно удалены. Название бюджета не обязательно. Без указания названия бюджета будет выбран активный бюджет."
+            Command = "/create",
+            Description = TR.L+"CREATE"
+        },
+        new()
+        {
+            Command = "/switch",
+            Description = TR.L+"SWITCH"
+        },
+        new()
+        {
+            Command = "/grant",
+            Description = TR.L+"GRANT"
+        },
+        new()
+        {
+            Command = "/timezone",
+            Description = TR.L+"TZ"
+        },
+        new()
+        {
+            Command = "/revoke",
+            Description = TR.L+"REVOKE"
+        },
+        new()
+        {
+            Command = "/delete",
+            Description = TR.L+"DELETE"
         },
         new()
         {
             Command = "/start",
-            Description = "/start - Показать справку."
+            Description = TR.L+"START"
         },
         new()
         {
             Command = "/help",
-            Description = "/help - Показать справку."
+            Description = TR.L+"HELP"
         }
     };
 }
