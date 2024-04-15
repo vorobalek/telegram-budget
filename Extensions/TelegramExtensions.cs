@@ -1,9 +1,5 @@
 using Telegram.Bot.Types;
-using TelegramBudget.Services.TelegramUpdates;
-using TelegramBudget.Services.TelegramUpdates.EditedMessages;
-using TelegramBudget.Services.TelegramUpdates.EditedMessages.Text;
-using TelegramBudget.Services.TelegramUpdates.Messages;
-using TelegramBudget.Services.TelegramUpdates.Messages.Text;
+using TelegramBudget.Services.TelegramApi;
 
 namespace TelegramBudget.Extensions;
 
@@ -34,32 +30,9 @@ public static class TelegramExtensions
 
     public static IServiceCollection AddTelegramHandlers(this IServiceCollection services)
     {
-        services.AddScoped<IHandleUpdateService, HandleUpdateService>();
-        services.AddScoped<IUpdateHandler, MessageUpdateHandler>();
-
-        services.AddScoped<IMessageHandler, TextMessageHandler>();
-        services.AddScoped<ITextHandler, CreateBudgetTextHandler>();
-        services.AddScoped<ITextHandler, GrantBudgetTextHandler>();
-        services.AddScoped<ITextHandler, SwitchBudgetTextHandler>();
-        services.AddScoped<ITextHandler, MeTextHandler>();
-        services.AddScoped<ITextHandler, TransactionTextHandler>();
-        services.AddScoped<ITextHandler, ListBudgetTextHandler>();
-        services.AddScoped<ITextHandler, DeleteBudgetTextHandler>();
-        services.AddScoped<ITextHandler, HelpTextHandler>();
-        services.AddScoped<ITextHandler, HistoryTextHandler>();
-        services.AddScoped<ITextHandler, TimeZoneTextHandler>();
-        services.AddScoped<ITextHandler, RevokeBudgetTextHandler>();
-
-        services.AddScoped<ITextHandler, SwitchBudgetInternalTextHandler>();
-        services.AddScoped<ITextHandler, HistoryInternalTextHandler>();
-        services.AddScoped<ITextHandler, GrantBudgetInternalTextHandler>();
-        services.AddScoped<ITextHandler, RevokeBudgetInternalTextHandler>();
-
-        services.AddScoped<IUpdateHandler, EditedMessageUpdateHandler>();
-        services.AddScoped<IEditedMessageHandler, TextEditedMessageHandler>();
-        services.AddScoped<ITextEditedHandler, TransactionTextEditedHandler>();
-
-        return services;
+        return services
+            .AddTelegramFlow()
+            .AddScoped<ITelegramApiService, TelegramApiService>();
     }
 
     private static string GetFullName(this User user)

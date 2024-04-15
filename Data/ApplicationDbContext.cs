@@ -4,7 +4,7 @@ using Common.Database.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using TelegramBudget.Data.Entities;
-using TelegramBudget.Services;
+using TelegramBudget.Services.CurrentUser;
 
 namespace TelegramBudget.Data;
 

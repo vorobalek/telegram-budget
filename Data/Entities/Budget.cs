@@ -4,7 +4,6 @@ using Common.Database.Traits;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Newtonsoft.Json;
-using TelegramBudget.Services;
 
 namespace TelegramBudget.Data.Entities;
 
@@ -54,10 +53,8 @@ public class Budget :
 
     public Guid Id { get; set; }
 
-    public sealed class ChangeListener(ICurrentUserService currentUserService) : EntityChangeListener<Budget>
+    public sealed class ChangeListener : EntityChangeListener<Budget>
     {
-        private readonly ICurrentUserService _currentUserService = currentUserService;
-
         protected override void OnModelCreating(EntityTypeBuilder<Budget> builder)
         {
             base.OnModelCreating(builder);

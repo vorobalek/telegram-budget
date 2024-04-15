@@ -1,5 +1,4 @@
 global using LPlus;
-
 using Common.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
@@ -8,18 +7,36 @@ using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Middleware;
 using TelegramBudget.Services;
+using TelegramBudget.Services.CurrentUser;
 
 var host = Host
     .CreateDefaultBuilder(args)
     .ConfigureWebHostDefaults(builder =>
     {
+        builder.ConfigureAppConfiguration((context, configurationBuilder) =>
+        {
+            var localizationFiles = Directory
+                .EnumerateFiles(
+                    Path.Combine(context.HostingEnvironment.ContentRootPath, "Localization"),
+                    "*.json",
+                    SearchOption.TopDirectoryOnly);
+
+            foreach (var localizationFile in localizationFiles)
+                configurationBuilder
+                    .AddJsonFile(
+                        localizationFile,
+                        true,
+                        true);
+        });
+
         builder.ConfigureServices((context, services) =>
         {
             TR.Configure(options =>
             {
                 options.DetermineLanguageCodeDelegate = () => AppConfiguration.Locale;
                 options.BuildTranslationKeyDelegate = (languageCode, text) => $"Localization:{languageCode}:{text}";
-                options.TryGetTranslationDelegate = translationKey => context.Configuration.GetValue<string>(translationKey);
+                options.TryGetTranslationDelegate =
+                    translationKey => context.Configuration.GetValue<string>(translationKey);
 #if DEBUG
                 var path = Path.Combine(
                     context.HostingEnvironment.ContentRootPath,
@@ -32,37 +49,41 @@ var host = Host
 #endif
             });
             services
-                .AddHostedService<ConfigureWebhook>()
+                .AddHostedService<ConfigureWebhookHostedService>()
                 .AddHttpClient("Telegram.Webhook")
                 .AddTypedClient<ITelegramBotClient>(httpClient => new TelegramBotClient(
                     TelegramBotConfiguration.BotToken,
                     httpClient));
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseNpgsql(context.Configuration.GetConnectionString("Default") ??
-                                  AppConfiguration.ConnectionString);
+                options.UseNpgsql(AppConfiguration.ConnectionString ??
+                                  context.Configuration.GetConnectionString("Default"));
             });
             services.AddCommonDatabaseFeatures<ApplicationDbContext>();
             services.AddControllers().AddNewtonsoftJson();
             services.AddHealthChecks();
 
-            services.AddTelegramHandlers();
+            services.AddSingleton<GlobalCancellationTokenSource>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddTelegramHandlers();
+
             services.AddHttpContextAccessor();
         });
 
         builder.ConfigureLogging(logging =>
         {
-            logging.AddSentry(configuration =>
-            {
-                configuration.Dsn = SentryConfiguration.Dsn;
-                configuration.MinimumEventLevel = SentryConfiguration.MinimumEventLevel;
-                configuration.DisableDuplicateEventDetection();
-            });
+            if (!string.IsNullOrWhiteSpace(SentryConfiguration.Dsn))
+                logging.AddSentry(configuration =>
+                {
+                    configuration.Dsn = SentryConfiguration.Dsn;
+                    configuration.MinimumEventLevel = SentryConfiguration.MinimumEventLevel;
+                    configuration.DisableDuplicateEventDetection();
+                });
         });
 
         builder.Configure(app =>
         {
+            app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
             app.UseWhen(
                 context => context.Request.Path.StartsWithSegments("/bot"),
