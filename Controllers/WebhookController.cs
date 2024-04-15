@@ -1,15 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
-using TelegramBudget.Services.TelegramUpdates;
+using TelegramBudget.Extensions;
+using TelegramBudget.Services;
+using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi;
 
 namespace TelegramBudget.Controllers;
 
-public class WebhookController(IHandleUpdateService handleUpdateService) : ControllerBase
+public class WebhookController(
+    ITelegramApiService telegramApiService, 
+    ICurrentUserService currentUserService,
+    GlobalCancellationTokenSource cancellationTokenSource) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Update update)
     {
-        await handleUpdateService.HandleUpdateAsync(update, default);
+        currentUserService.TelegramUser = update.GetUser();
+        await telegramApiService.HandleUpdateAsync(update, cancellationTokenSource.CancellationToken);
         return Ok();
     }
 }

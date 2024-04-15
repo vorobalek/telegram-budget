@@ -1,5 +1,5 @@
 using Common.Database.Traits;
-using TelegramBudget.Services;
+using TelegramBudget.Services.CurrentUser;
 
 namespace TelegramBudget.Data;
 
