@@ -192,7 +192,7 @@ public static class TelegramFlowExtensions
                             .ForText(text => text
                                 .WithInjection<ITelegramBotClient>()
                                 .WithAsyncProcessing((context, injected, token) =>
-                                    injected.SendChatActionAsync(context.Update.GetUser().Id, ChatAction.Typing,
+                                    injected.SendChatActionAsync(context.Message.From!.Id, ChatAction.Typing,
                                         cancellationToken: token))))
                         .ForCallbackQuery(callbackQuery => callbackQuery
                             .WithInjection<ITelegramBotClient>()
@@ -202,7 +202,7 @@ public static class TelegramFlowExtensions
                             .ForText(text => text
                                 .WithInjection<ITelegramBotClient>()
                                 .WithAsyncProcessing((context, injected, token) =>
-                                    injected.SendChatActionAsync(context.Update.GetUser().Id, ChatAction.Typing,
+                                    injected.SendChatActionAsync(context.EditedMessage.From!.Id, ChatAction.Typing,
                                         cancellationToken: token))))
                         .Build<ITelegramBotClient>(sp)));
     }
