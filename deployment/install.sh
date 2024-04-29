@@ -3,9 +3,10 @@
 set -e
 
 cleanup() {
-  docker compose -f ./"$NOW"/docker-compose.yml down -v || true
-  docker compose -f ./"$NOW"/docker-compose.yml rm || true
-  rm -rf ./"$NOW"
+  docker compose -f "./.tmp/$NOW/docker-compose.yml" down -v || true
+  docker compose -f "./.tmp/$NOW/docker-compose.yml" rm || true
+  rm -rf "./.tmp/$NOW"
+  rm -rf "./$DIRECTORY"
 }
 
 handle_error() {
@@ -18,7 +19,6 @@ handle_error() {
 
 trap 'handle_error' ERR SIGINT SIGQUIT SIGTSTP
 NOW=$(date +%Y%m%d%H%M)
-mkdir ./"$NOW"
 
 mask() {
   local __MASKED__
@@ -54,8 +54,17 @@ secure_input() {
   /bin/echo "$__PASSWORD__"
 }
 
+prompt_directory() {
+  read -rp "Enter installation directory ('$NOW' by default): " DIRECTORY
+  if [[ $DIRECTORY == "" ]] ; then
+    DIRECTORY="$NOW"
+  fi
+  mkdir "./$DIRECTORY" || handle_error 
+  mkdir -p "./.tmp/$NOW" || handle_error 
+}
+
 prompt_domain() {
-  read -rp "Enter domain (The folder with the same name will be created): " DOMAIN
+  read -rp "Enter domain: " DOMAIN
 }
 
 prompt_number_of_replicas() {
@@ -188,6 +197,7 @@ prompt_sentry_dsn() {
 }
 
 prompt_input() {
+  prompt_directory
   prompt_domain
   prompt_number_of_replicas
   if prompt_setup_db
@@ -208,6 +218,7 @@ prompt_input() {
 print_configuration() {
   /bin/echo "--------------------------------------------------------------------------------
 Your configuration:
+> Installation directory: $DIRECTORY
 > Domain: $DOMAIN
 > Number of replicas: $NUMBER_OF_REPLICAS
 > Database settings:"
@@ -269,7 +280,7 @@ generate_postgres_environment_file() {
 
   /bin/echo -n "POSTGRES_DB=$DB_NAME
 POSTGRES_USER='$DB_USER'
-POSTGRES_PASSWORD='$DB_PASSWORD'" > ./"$NOW"/postgres.env
+POSTGRES_PASSWORD='$DB_PASSWORD'" > "./.tmp/$NOW/postgres.env"
 
   /bin/echo "Done."
 }
@@ -284,7 +295,7 @@ TELEGRAM_WEBHOOK_SECRET='$TELEGRAM_WEBHOOK_SECRET'
 AUTHORIZED_USER_IDS='$AUTHORIZED_USER_IDS'
 LOCALE='$LOCALE'
 DATETIME_FORMAT='$DATETIME_FORMAT'
-SENTRY_DSN='$SENTRY_DSN'" > ./"$NOW"/backend.env
+SENTRY_DSN='$SENTRY_DSN'" > "./.tmp/$NOW/backend.env"
 
   /bin/echo "Done."
 }
@@ -294,23 +305,23 @@ generate_docker_compose() {
 
   /bin/echo -n "networks:
   backend-lan:
-    driver: bridge" > ./"$NOW"/docker-compose.yml
+    driver: bridge" > "./.tmp/$NOW/docker-compose.yml"
 
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres-lan:
-    driver: bridge" >> ./"$NOW"/docker-compose.yml
+    driver: bridge" >> "./.tmp/$NOW/docker-compose.yml"
 
-  /bin/echo >> ./"$NOW"/docker-compose.yml
+  /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
 
   /bin/echo -n "
 services:
   nginx:
-    depends_on:" >> ./"$NOW"/docker-compose.yml
+    depends_on:" >> "./.tmp/$NOW/docker-compose.yml"
 
   REPLICA_NUMBER=1
   while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
     /bin/echo -n "
-    - \"backend$REPLICA_NUMBER\"" >> ./"$NOW"/docker-compose.yml
+    - \"backend$REPLICA_NUMBER\"" >> "./.tmp/$NOW/docker-compose.yml"
     REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
   done
 
@@ -333,9 +344,9 @@ services:
     image: certbot/certbot:latest
     volumes:
       - ./certbot/www/:/var/www/certbot/:rw
-      - ./certbot/conf/:/etc/letsencrypt/:rw" >> ./"$NOW"/docker-compose.yml
+      - ./certbot/conf/:/etc/letsencrypt/:rw" >> "./.tmp/$NOW/docker-compose.yml"
 
-  /bin/echo >> ./"$NOW"/docker-compose.yml
+  /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
 
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres:
@@ -349,16 +360,16 @@ services:
       - path: postgres.env
         required: true
     networks:
-      - postgres-lan" >> ./"$NOW"/docker-compose.yml && /bin/echo >> ./"$NOW"/docker-compose.yml
+      - postgres-lan" >> "./.tmp/$NOW/docker-compose.yml" && /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
 
   REPLICA_NUMBER=1
   while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
     /bin/echo -n "
-  backend$REPLICA_NUMBER:" >> ./"$NOW"/docker-compose.yml
+  backend$REPLICA_NUMBER:" >> "./.tmp/$NOW/docker-compose.yml"
 
     [[ $SETUP_DB == 1 ]] && /bin/echo -n "
     depends_on:
-      - \"postgres\""  >> ./"$NOW"/docker-compose.yml
+      - \"postgres\""  >> "./.tmp/$NOW/docker-compose.yml"
 
     /bin/echo -n "
     image: vorobalek/telegram-budget:latest
@@ -371,18 +382,18 @@ services:
     environment:
       PORT: \"80\"
     networks:
-      - backend-lan"  >> ./"$NOW"/docker-compose.yml
+      - backend-lan"  >> "./.tmp/$NOW/docker-compose.yml"
 
     [[ $SETUP_DB == 1 ]] && /bin/echo -n "
-      - postgres-lan"  >> ./"$NOW"/docker-compose.yml
+      - postgres-lan"  >> "./.tmp/$NOW/docker-compose.yml"
 
-    /bin/echo >> ./"$NOW"/docker-compose.yml
+    /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
     REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
   done
 
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
 volumes:
-  postgresql_volume:" >> ./"$NOW"/docker-compose.yml
+  postgresql_volume:" >> "./.tmp/$NOW/docker-compose.yml"
 
   /bin/echo "Done."
 }
@@ -390,7 +401,7 @@ volumes:
 generate_nginx_configuration() {
   /bin/echo "Generating nginx configuration..."
 
-  mkdir -p "./$NOW/nginx/conf" || (/bin/echo "Unable to create ./$NOW/nginx/conf folder" && exit)
+  mkdir -p "./.tmp/$NOW/nginx/conf" || (/bin/echo "Unable to create ./.tmp/$NOW/nginx/conf folder" && exit)
 
   /bin/echo -n "server {
   listen 80;
@@ -403,7 +414,7 @@ generate_nginx_configuration() {
   location / {
     return 301 https://$DOMAIN\$request_uri;
   }
-}" > ./"$NOW"/nginx/conf/"$DOMAIN".conf
+}" > "./.tmp/$NOW/nginx/conf/$DOMAIN".conf
 
   /bin/echo "Done."
 }
@@ -411,8 +422,8 @@ generate_nginx_configuration() {
 generate_certificates() {
   /bin/echo "Issuing certificates..."
 
-  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || handle_error
-  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || handle_error
+  docker compose -f "./.tmp/$NOW/docker-compose.yml" run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || handle_error
+  docker compose -f "./.tmp/$NOW/docker-compose.yml" run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || handle_error
 
   /bin/echo "Done."
 }
@@ -422,17 +433,17 @@ update_nginx_configuration() {
 
   /bin/echo -n "
 
-upstream backends {" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
+upstream backends {" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
 
   REPLICA_NUMBER=1
   while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
     /bin/echo -n "
-  server backend$REPLICA_NUMBER:80;" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
+  server backend$REPLICA_NUMBER:80;" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
     REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
   done
 
   /bin/echo "
-}" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
+}" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
 
   /bin/echo -n "
 server {
@@ -457,13 +468,13 @@ server {
     default_type application/json;
     return 302 \"{\\\"message\\\": \\\"You've been rick-rolled.\\\"}\";
   }
-}" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
+}" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
 
   /bin/echo "Done."
 }
 
 copy_installed() {
-  cp -r ./"$NOW"/* ./"$DOMAIN"
+  cp -r "./.tmp/$NOW/*" ./"$DIRECTORY"
 }
 
 main() {
