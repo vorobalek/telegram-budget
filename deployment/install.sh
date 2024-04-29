@@ -27,22 +27,22 @@ secure_input() {
   
   while IFS= read -p "$__PROMPT__" -r -s -n 1 __CHAR__
   do
-      if [[ $__CHAR__ == $'\0' ]] ; then
-          break
-      fi
-      if [[ $__CHAR__ == $'\177' ]] ; then
-          if [ $__CHAR_COUNT__ -gt 0 ] ; then
-              __CHAR_COUNT__=$((__CHAR_COUNT__-1))
-              __PROMPT__=$'\b \b'
-              __PASSWORD__="${__PASSWORD__%?}"
-          else
-              __PROMPT__=''
-          fi
+    if [[ $__CHAR__ == $'\0' ]] ; then
+      break
+    fi
+    if [[ $__CHAR__ == $'\177' ]] ; then
+      if [ $__CHAR_COUNT__ -gt 0 ] ; then
+        __CHAR_COUNT__=$((__CHAR_COUNT__-1))
+        __PROMPT__=$'\b \b'
+        __PASSWORD__="${__PASSWORD__%?}"
       else
-          __CHAR_COUNT__=$((__CHAR_COUNT__+1))
-          __PROMPT__='*'
-          __PASSWORD__+="$__CHAR__"
+        __PROMPT__=''
       fi
+    else
+      __CHAR_COUNT__=$((__CHAR_COUNT__+1))
+      __PROMPT__='*'
+      __PASSWORD__+="$__CHAR__"
+    fi
   done
   
   /bin/echo "$__PASSWORD__"
@@ -155,14 +155,14 @@ prompt_authorized_user_ids() {
 
 prompt_locale() {
   while true; do
-      read -rp "Enter locale (or press enter for default): [en/ru] " LOCALE
-      case $LOCALE in
-        "en") return 0 ;;
-        "ru") return 0 ;;
-        "") LOCALE="en" && return 0 ;;
-        *) printf " \033[31m %s \n\033[0m" "invalid input"
-      esac 
-    done 
+    read -rp "Enter locale (or press enter for default): [en/ru] " LOCALE
+    case $LOCALE in
+      "en") return 0 ;;
+      "ru") return 0 ;;
+      "") LOCALE="en" && return 0 ;;
+      *) printf " \033[31m %s \n\033[0m" "invalid input"
+    esac 
+  done 
 }
 
 prompt_datetime_format() {
@@ -242,13 +242,13 @@ unset_variables() {
 
 prompt_input_double_checked() {
   while true; do
-      unset_variables || fallback
-      prompt_input || fallback
-      print_configuration || fallback
-      if prompt_confirmation "Is everything correct" || fallback
-      then
-        break;
-      fi
+    unset_variables || fallback
+    prompt_input || fallback
+    print_configuration || fallback
+    if prompt_confirmation "Is everything correct" || fallback
+    then
+      break;
+    fi
   done
 }
 
@@ -297,11 +297,12 @@ services:
   nginx:
     depends_on:" >> ./"$NOW"/docker-compose.yml
   
-  for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
-    do
-      /bin/echo -n "
-      - \"backend$REPLICA_NUMBER\"" >> ./"$NOW"/docker-compose.yml
-    done
+  REPLICA_NUMBER=1
+  while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
+    /bin/echo -n "
+    - \"backend$REPLICA_NUMBER\"" >> ./"$NOW"/docker-compose.yml
+    REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
+  done
   
   /bin/echo -n "
     image: nginx:latest
@@ -339,16 +340,16 @@ services:
     networks:
       - postgres-lan" >> ./"$NOW"/docker-compose.yml && /bin/echo >> ./"$NOW"/docker-compose.yml
   
-  for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
-    do
-      /bin/echo -n "
+  REPLICA_NUMBER=1
+  while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
+    /bin/echo -n "
   backend$REPLICA_NUMBER:" >> ./"$NOW"/docker-compose.yml
   
-      [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+    [[ $SETUP_DB == 1 ]] && /bin/echo -n "
     depends_on:
       - \"postgres\""  >> ./"$NOW"/docker-compose.yml
   
-      /bin/echo -n "
+    /bin/echo -n "
     image: vorobalek/telegram-budget:latest
     ports:
       - \"80\"
@@ -361,11 +362,12 @@ services:
     networks:
       - backend-lan"  >> ./"$NOW"/docker-compose.yml
   
-      [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+    [[ $SETUP_DB == 1 ]] && /bin/echo -n "
       - postgres-lan"  >> ./"$NOW"/docker-compose.yml
     
-      /bin/echo >> ./"$NOW"/docker-compose.yml
-    done
+    /bin/echo >> ./"$NOW"/docker-compose.yml
+    REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
+  done
   
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
 volumes:
@@ -411,11 +413,13 @@ update_nginx_configuration() {
 
 upstream backends {" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
   
-  for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
-    do
-      /bin/echo -n "
+  REPLICA_NUMBER=1
+  while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
+    /bin/echo -n "
   server backend$REPLICA_NUMBER:80;" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
-    done
+    REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
+  done
+
   /bin/echo "
 }" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
   
