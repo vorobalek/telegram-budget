@@ -447,8 +447,8 @@ upstream backends {" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
 
   /bin/echo -n "
 server {
-  listen 443 default_server ssl http2;
-  listen [::]:443 ssl http2;
+  listen 443 ssl;
+  listen [::]:443 ssl;
   server_name $DOMAIN;
   ssl_certificate /etc/nginx/ssl/live/$DOMAIN/fullchain.pem;
   ssl_certificate_key /etc/nginx/ssl/live/$DOMAIN/privkey.pem;

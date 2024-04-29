@@ -2,6 +2,12 @@
 > [@BUDGET_DEMO_BOT](https://t.me/budget_demo_bot)
 
 # How to run
+1. ```shell
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/patch/2404291253-add-install.sh/deployment/install.sh)"
+   ```
+2. //TODO
+
+# How to build
 
 1. ```shell
    docker build -t <image nametag> .
