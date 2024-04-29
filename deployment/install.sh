@@ -57,16 +57,16 @@ prompt_number_of_replicas() {
   __IS_NUMBER_REGEX__='(^[0-9]+$)|(^$)'
   while true; do
     read -rp "Enter number of replicas (1 by default): " NUMBER_OF_REPLICAS
-    if ! [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]] 
+    if [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]] 
     then
-      printf " \033[31m %s \n\033[0m" "invalid input"
-    else
       if [[ $NUMBER_OF_REPLICAS -eq 0 ]]
       then
         NUMBER_OF_REPLICAS=1
         printf " \033[31m %s \n\033[0m" "value '1' has been set"
       fi
       return 0
+    else
+      printf " \033[31m %s \n\033[0m" "invalid input"
     fi
   done 
 }
@@ -145,10 +145,11 @@ prompt_authorized_user_ids() {
   __IS_NUMBER_SET_REGEX__='(^[0-9,; ]+$)|(^\*$)'
   while true; do
     read -rp "Enter authorized used ids (only digits, comma, and semicolon allowed. Or '*' to allow public access): " AUTHORIZED_USER_IDS
-    if ! [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]] 
+    if [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]] 
     then
+      return 0
+    else 
       printf " \033[31m %s \n\033[0m" "invalid input"
-    else return 0
     fi
   done
 }
