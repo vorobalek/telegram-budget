@@ -3,8 +3,8 @@
 set -e
 
 cleanup() {
-  docker compose -f ./"$NOW"/docker-compose.yml down -v
-  docker compose -f ./"$NOW"/docker-compose.yml rm
+  docker compose -f ./"$NOW"/docker-compose.yml down -v || true
+  docker compose -f ./"$NOW"/docker-compose.yml rm || true
   rm -rf ./"$NOW"
 }
 
