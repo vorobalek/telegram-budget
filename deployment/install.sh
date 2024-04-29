@@ -5,7 +5,6 @@ set -e
 cleanup() {
   docker compose -f ./"$NOW"/docker-compose.yml down -v
   docker compose -f ./"$NOW"/docker-compose.yml rm
-  rm -rf ./"$NOW"
 }
 
 handle_error() {
@@ -13,7 +12,7 @@ handle_error() {
 
   printf " \033[31m %s \n\033[0m" "Cleaning up..."
   cleanup
-  printf " \033[31m %s \n\033[0m" "Done."
+  printf " \033[31m %s \n\033[0m" "Done. Artifacts has been kept."
 
   exit 1
 }
@@ -448,7 +447,7 @@ server {
 }
 
 copy_installed() {
-  cp -r ./"$NOW"/* ./
+  cp -r ./"$NOW"/* ./ || handle_error
 }
 
 main() {
