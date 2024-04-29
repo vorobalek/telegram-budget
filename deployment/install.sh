@@ -2,16 +2,17 @@
 
 set -e
 
+cleanup() {
+  docker compose -f ./"$NOW"/docker-compose.yml down -v
+  docker compose -f ./"$NOW"/docker-compose.yml rm
+  rm -rf ./"$NOW"
+}
+
 handle_error() {
   printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed. Status: $?" >&2
 
-  printf " \033[31m %s \n\033[0m" "Rollback..."
-  docker compose -f ./"$NOW"/docker-compose.yml down
-  printf " \033[31m %s \n\033[0m" "Services stopped."
-  docker compose -f ./"$NOW"/docker-compose.yml rm --force
-  printf " \033[31m %s \n\033[0m" "Services removed."
-  rm -rf ./"$NOW"
-  printf " \033[31m %s \n\033[0m" "Installation folder removed."
+  printf " \033[31m %s \n\033[0m" "Cleaning up..."
+  cleanup
   printf " \033[31m %s \n\033[0m" "Done."
 
   exit 1
@@ -446,6 +447,10 @@ server {
   /bin/echo "Done."
 }
 
+copy_installed() {
+  cp -r ./"$NOW" ./
+}
+
 main() {
   prompt_input_double_checked
   generate_backend_environment_file
@@ -454,6 +459,9 @@ main() {
   generate_nginx_configuration
   generate_certificates
   update_nginx_configuration
+  copy_installed
+  cleanup
+  rm install.sh
 }
 
 main || exit
