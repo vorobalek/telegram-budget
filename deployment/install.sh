@@ -1,6 +1,18 @@
 #!/bin/bash
 
-# TODO: fallback with deletion || exit
+NOW=$(date +%Y%m%d%H%M)
+
+mkdir ./"$NOW"
+
+fallback() {
+  printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed."
+  
+  printf " \033[31m %s \n\033[0m" "Rollback."
+  rm -rf ./"$NOW"/
+  printf " \033[31m %s \n\033[0m" "Done."
+
+  exit
+}
 
 mask() {
   local __MASKED__
@@ -49,13 +61,12 @@ prompt_number_of_replicas() {
     then
       printf " \033[31m %s \n\033[0m" "invalid input"
     else
-      if [[ $NUMBER_OF_REPLICAS -gt 0 ]]
+      if [[ $NUMBER_OF_REPLICAS -eq 0 ]]
       then
-        return 0
-      else
         NUMBER_OF_REPLICAS=1
-        return 0
+        printf " \033[31m %s \n\033[0m" "value '1' has been set"
       fi
+      return 0
     fi
   done 
 }
@@ -63,7 +74,7 @@ prompt_number_of_replicas() {
 prompt_confirmation() {
   while true; do
     local __CONFIRMATION__
-    read -rp "$1? (y/n): " __CONFIRMATION__
+    read -rp "$1? [y/n]: " __CONFIRMATION__
     case $__CONFIRMATION__ in
       [yY]) return 0 ;;
       [nN]) return 1 ;;
@@ -92,12 +103,12 @@ prompt_db_user() {
 }
 
 prompt_db_password() {
-  DB_PASSWORD=$(secure_input "Enter database password: ")
+  DB_PASSWORD=$(secure_input "Enter database password: ") || fallback
   /bin/echo
 }
 
 prompt_db_password_confirmation() {
-  DB_PASSWORD_CONFIRMATION=$(secure_input "Reply database password: ")
+  DB_PASSWORD_CONFIRMATION=$(secure_input "Reply database password: ") || fallback
   /bin/echo
 }
 
@@ -115,27 +126,36 @@ prompt_db_connection_string() {
     DB_CONNECTION_STRING="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$DB_PASSWORD"
     DB_CONNECTION_STRING_MASKED="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$(mask "$DB_PASSWORD")"
   else
-    read -rp "Enter database connection string: " DB_CONNECTION_STRING
+    read -rp "Enter database connection string: " DB_CONNECTION_STRING || fallback
   fi
 }
 
 prompt_telegram_bot_token() {
-  TELEGRAM_BOT_TOKEN=$(secure_input "Enter Telegram Bot token: ") 
+  TELEGRAM_BOT_TOKEN=$(secure_input "Enter Telegram Bot token: ") || fallback
   /bin/echo
 }
 
 prompt_telegram_webhook_secret() {
-  TELEGRAM_WEBHOOK_SECRET=$(secure_input "Enter Telegram webhook secret: ")
+  TELEGRAM_WEBHOOK_SECRET=$(secure_input "Enter Telegram webhook secret: ") || fallback
   /bin/echo
 }
 
 prompt_authorized_user_ids() {
-  read -rp "Enter authorized used ids: " AUTHORIZED_USER_IDS
+  local __IS_NUMBER_SET_REGEX__
+  __IS_NUMBER_SET_REGEX__='(^[0-9,; ]+$)|(^\*$)'
+  while true; do
+    read -rp "Enter authorized used ids (only digits, comma, and semicolon allowed. Or '*' to allow public access): " AUTHORIZED_USER_IDS
+    if ! [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]] 
+    then
+      printf " \033[31m %s \n\033[0m" "invalid input"
+    else return 0
+    fi
+  done
 }
 
 prompt_locale() {
   while true; do
-      read -rp "Enter locale (or press enter for default): (en/ru) " LOCALE
+      read -rp "Enter locale (or press enter for default): [en/ru] " LOCALE
       case $LOCALE in
         "en") return 0 ;;
         "ru") return 0 ;;
@@ -158,21 +178,21 @@ prompt_sentry_dsn() {
 }
 
 prompt_input() {
-  prompt_domain
-  prompt_number_of_replicas
-  if prompt_setup_db
+  prompt_domain || fallback
+  prompt_number_of_replicas || fallback
+  if prompt_setup_db || fallback
   then
-    prompt_db_name
-    prompt_db_user
-    prompt_db_password_double_checked
+    prompt_db_name || fallback
+    prompt_db_user || fallback
+    prompt_db_password_double_checked || fallback
   fi
-  prompt_db_connection_string
-  prompt_telegram_bot_token
-  prompt_telegram_webhook_secret
-  prompt_authorized_user_ids
-  prompt_locale
-  prompt_datetime_format
-  prompt_sentry_dsn
+  prompt_db_connection_string || fallback
+  prompt_telegram_bot_token || fallback
+  prompt_telegram_webhook_secret || fallback
+  prompt_authorized_user_ids || fallback
+  prompt_locale || fallback
+  prompt_datetime_format || fallback
+  prompt_sentry_dsn || fallback
 }
 
 print_configuration() {
@@ -203,29 +223,29 @@ Your configuration:
 }
 
 unset_variables() {
-  unset DOMAIN
-  unset NUMBER_OF_REPLICAS
-  unset SETUP_DB
-  unset DB_NAME
-  unset DB_USER
-  unset DB_PASSWORD
-  unset DB_PASSWORD_CONFIRMATION
-  unset DB_CONNECTION_STRING
-  unset DB_CONNECTION_STRING_MASKED
-  unset TELEGRAM_BOT_TOKEN
-  unset TELEGRAM_WEBHOOK_SECRET
-  unset AUTHORIZED_USER_IDS
-  unset LOCALE
-  unset DATETIME_FORMAT
-  unset SENTRY_DSN
+  unset DOMAIN || fallback
+  unset NUMBER_OF_REPLICAS || fallback
+  unset SETUP_DB || fallback
+  unset DB_NAME || fallback
+  unset DB_USER || fallback
+  unset DB_PASSWORD || fallback
+  unset DB_PASSWORD_CONFIRMATION || fallback
+  unset DB_CONNECTION_STRING || fallback
+  unset DB_CONNECTION_STRING_MASKED || fallback
+  unset TELEGRAM_BOT_TOKEN || fallback
+  unset TELEGRAM_WEBHOOK_SECRET || fallback
+  unset AUTHORIZED_USER_IDS || fallback
+  unset LOCALE || fallback
+  unset DATETIME_FORMAT || fallback
+  unset SENTRY_DSN || fallback
 }
 
 prompt_input_double_checked() {
   while true; do
-      unset_variables
-      prompt_input
-      print_configuration
-      if prompt_confirmation "Is everything correct"
+      unset_variables || fallback
+      prompt_input || fallback
+      print_configuration || fallback
+      if prompt_confirmation "Is everything correct" || fallback
       then
         break;
       fi
@@ -239,7 +259,7 @@ generate_postgres_environment_file() {
   
   /bin/echo -n "POSTGRES_DB=$DB_NAME
 POSTGRES_USER='$DB_USER'
-POSTGRES_PASSWORD='$DB_PASSWORD'" > postgres.env
+POSTGRES_PASSWORD='$DB_PASSWORD'" > ./"$NOW"/postgres.env
 
   /bin/echo "Done."
 }
@@ -254,7 +274,7 @@ TELEGRAM_WEBHOOK_SECRET='$TELEGRAM_WEBHOOK_SECRET'
 AUTHORIZED_USER_IDS='$AUTHORIZED_USER_IDS'
 LOCALE='$LOCALE'
 DATETIME_FORMAT='$DATETIME_FORMAT'
-SENTRY_DSN='$SENTRY_DSN'" > backend.env
+SENTRY_DSN='$SENTRY_DSN'" > ./"$NOW"/backend.env
 
   /bin/echo "Done."
 }
@@ -264,23 +284,23 @@ generate_docker_compose() {
   
   /bin/echo -n "networks:
   backend-lan:
-    driver: bridge" > docker-compose.yml
+    driver: bridge" > ./"$NOW"/docker-compose.yml
   
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres-lan:
-    driver: bridge" >> docker-compose.yml
+    driver: bridge" >> ./"$NOW"/docker-compose.yml
   
-  /bin/echo
+  /bin/echo >> ./"$NOW"/docker-compose.yml
   
   /bin/echo -n "
 services:
   nginx:
-    depends_on:" >> docker-compose.yml
+    depends_on:" >> ./"$NOW"/docker-compose.yml
   
   for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
     do
       /bin/echo -n "
-      - \"backend$REPLICA_NUMBER\"" >> docker-compose.yml
+      - \"backend$REPLICA_NUMBER\"" >> ./"$NOW"/docker-compose.yml
     done
   
   /bin/echo -n "
@@ -301,9 +321,9 @@ services:
     image: certbot/certbot:latest
     volumes:
       - ./certbot/www/:/var/www/certbot/:rw
-      - ./certbot/conf/:/etc/letsencrypt/:rw" >> docker-compose.yml
+      - ./certbot/conf/:/etc/letsencrypt/:rw" >> ./"$NOW"/docker-compose.yml
   
-  /bin/echo
+  /bin/echo >> ./"$NOW"/docker-compose.yml
   
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres:
@@ -317,16 +337,16 @@ services:
       - path: postgres.env
         required: true
     networks:
-      - postgres-lan" >> docker-compose.yml && /bin/echo
+      - postgres-lan" >> ./"$NOW"/docker-compose.yml && /bin/echo >> ./"$NOW"/docker-compose.yml
   
   for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
     do
       /bin/echo -n "
-  backend$REPLICA_NUMBER:" >> docker-compose.yml
+  backend$REPLICA_NUMBER:" >> ./"$NOW"/docker-compose.yml
   
       [[ $SETUP_DB == 1 ]] && /bin/echo -n "
     depends_on:
-      - \"postgres\""  >> docker-compose.yml
+      - \"postgres\""  >> ./"$NOW"/docker-compose.yml
   
       /bin/echo -n "
     image: vorobalek/telegram-budget:latest
@@ -339,17 +359,17 @@ services:
     environment:
       PORT: \"80\"
     networks:
-      - backend-lan"  >> docker-compose.yml
+      - backend-lan"  >> ./"$NOW"/docker-compose.yml
   
       [[ $SETUP_DB == 1 ]] && /bin/echo -n "
-      - postgres-lan"  >> docker-compose.yml
-    done
+      - postgres-lan"  >> ./"$NOW"/docker-compose.yml
     
-  /bin/echo
+      /bin/echo >> ./"$NOW"/docker-compose.yml
+    done
   
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
 volumes:
-  postgresql_volume:" >> docker-compose.yml
+  postgresql_volume:" >> ./"$NOW"/docker-compose.yml
 
   /bin/echo "Done."
 }
@@ -357,9 +377,7 @@ volumes:
 generate_nginx_configuration() {
   /bin/echo "Generating nginx configuration..."
   
-  mkdir -p "nginx/conf" || (/bin/echo "Unable to create nginx/conf folder" && exit)
-  
-  /bin/echo
+  mkdir -p "nginx/conf" || (/bin/echo "Unable to create ./$NOW/nginx/conf folder" && exit)
   
   /bin/echo -n "server {
   listen 80;
@@ -372,7 +390,7 @@ generate_nginx_configuration() {
   location / {
     return 301 https://$DOMAIN\$request_uri;
   }
-}" > nginx/conf/"$DOMAIN".conf
+}" > ./"$NOW"/nginx/conf/"$DOMAIN".conf
 
   /bin/echo "Done."
 }
@@ -380,8 +398,8 @@ generate_nginx_configuration() {
 generate_certificates() {
   /bin/echo "Issuing certificates..."
 
-  docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || (/bin/echo "Unable to check certificate issuing" && exit)
-  docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || (/bin/echo "Unable to issue certificate" && exit)
+  docker-compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || fallback
+  docker-compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || fallback
 
   /bin/echo "Done."
 }
@@ -390,15 +408,16 @@ update_nginx_configuration() {
   /bin/echo "Updating nginx configuration..."
   
   /bin/echo -n "
-upstream backends {" >> nginx/conf/"$DOMAIN".conf
+
+upstream backends {" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
   
   for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
     do
       /bin/echo -n "
-  server backend$REPLICA_NUMBER:80;" >> nginx/conf/"$DOMAIN".conf
+  server backend$REPLICA_NUMBER:80;" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
     done
   /bin/echo "
-}" >> nginx/conf/"$DOMAIN".conf
+}" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
   
   /bin/echo -n "
 server {
@@ -410,19 +429,19 @@ server {
   location / {
     proxy_pass backends;
   }
-}" >> nginx/conf/"$DOMAIN".conf
+}" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
 
   /bin/echo "Done."
 }
 
 main() {
-  prompt_input_double_checked
-  generate_backend_environment_file
-  generate_postgres_environment_file
-  generate_docker_compose
-  generate_nginx_configuration
-  #generate_certificates
-  update_nginx_configuration
+  prompt_input_double_checked || fallback
+  generate_backend_environment_file || fallback
+  generate_postgres_environment_file || fallback
+  generate_docker_compose || fallback
+  generate_nginx_configuration || fallback
+  generate_certificates || fallback
+  update_nginx_configuration || fallback
 }
 
 main || exit
