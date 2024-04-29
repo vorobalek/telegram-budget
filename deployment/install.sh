@@ -448,7 +448,7 @@ server {
 }
 
 copy_installed() {
-  cp -r ./"$NOW" ./
+  cp -r ./"$NOW"/* ./
 }
 
 main() {
@@ -461,7 +461,7 @@ main() {
   update_nginx_configuration
   copy_installed
   cleanup
-  rm install.sh
+  rm install.sh || true
 }
 
 main || exit
