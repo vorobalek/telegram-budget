@@ -6,7 +6,7 @@ cleanup() {
   docker compose -f "./.tmp/$NOW/docker-compose.yml" down -v || true
   docker compose -f "./.tmp/$NOW/docker-compose.yml" rm || true
   rm -rf "./.tmp/$NOW"
-  rm -rf "./$DIRECTORY"
+  printf " \033[31m %s \n\033[0m" "./.tmp/$NOW Deleted."
 }
 
 handle_error() {
@@ -474,7 +474,7 @@ server {
 }
 
 copy_installed() {
-  cp -r "./.tmp/$NOW/*" ./"$DIRECTORY"
+  cp -r ./.tmp/"$NOW"/* ./"$DIRECTORY"
 }
 
 main() {
