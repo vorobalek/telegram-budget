@@ -265,7 +265,7 @@ prompt_input_double_checked() {
 generate_postgres_environment_file() {
   /bin/echo "Generating postgres environment files..."
 
-  [[ $SETUP_DB != 1 ]] && /bin/echo "Skipped."
+  [[ $SETUP_DB != 1 ]] && /bin/echo "Skipped." && return 0
 
   /bin/echo -n "POSTGRES_DB=$DB_NAME
 POSTGRES_USER='$DB_USER'
