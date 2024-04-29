@@ -1,9 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+# TODO: fallback with deletion || exit
 
 mask() {
   local __MASKED__
   __MASKED__="${1:0:1}$(printf '*%.0s' {1..8})${1:${#1}-1:1}"
-  echo "$__MASKED__"
+  /bin/echo "$__MASKED__"
 }
 
 secure_input() {
@@ -11,7 +13,6 @@ secure_input() {
   local __CHAR_COUNT__=0
   local __PROMPT__=$1
   
-  stty -echo
   while IFS= read -p "$__PROMPT__" -r -s -n 1 __CHAR__
   do
       if [[ $__CHAR__ == $'\0' ]] ; then
@@ -32,12 +33,31 @@ secure_input() {
       fi
   done
   
-  stty echo
-  echo "$__PASSWORD__"
+  /bin/echo "$__PASSWORD__"
 }
 
 prompt_domain() {
   read -rp "Enter domain: " DOMAIN
+}
+
+prompt_number_of_replicas() {
+  local __IS_NUMBER_REGEX__
+  __IS_NUMBER_REGEX__='(^[0-9]+$)|(^$)'
+  while true; do
+    read -rp "Enter number of replicas (1 by default): " NUMBER_OF_REPLICAS
+    if ! [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]] 
+    then
+      printf " \033[31m %s \n\033[0m" "invalid input"
+    else
+      if [[ $NUMBER_OF_REPLICAS -gt 0 ]]
+      then
+        return 0
+      else
+        NUMBER_OF_REPLICAS=1
+        return 0
+      fi
+    fi
+  done 
 }
 
 prompt_confirmation() {
@@ -73,12 +93,12 @@ prompt_db_user() {
 
 prompt_db_password() {
   DB_PASSWORD=$(secure_input "Enter database password: ")
-  echo
+  /bin/echo
 }
 
 prompt_db_password_confirmation() {
   DB_PASSWORD_CONFIRMATION=$(secure_input "Reply database password: ")
-  echo
+  /bin/echo
 }
 
 prompt_db_password_double_checked() {
@@ -101,12 +121,12 @@ prompt_db_connection_string() {
 
 prompt_telegram_bot_token() {
   TELEGRAM_BOT_TOKEN=$(secure_input "Enter Telegram Bot token: ") 
-  echo
+  /bin/echo
 }
 
 prompt_telegram_webhook_secret() {
   TELEGRAM_WEBHOOK_SECRET=$(secure_input "Enter Telegram webhook secret: ")
-  echo
+  /bin/echo
 }
 
 prompt_authorized_user_ids() {
@@ -139,6 +159,7 @@ prompt_sentry_dsn() {
 
 prompt_input() {
   prompt_domain
+  prompt_number_of_replicas
   if prompt_setup_db
   then
     prompt_db_name
@@ -155,33 +176,35 @@ prompt_input() {
 }
 
 print_configuration() {
-  echo "--------------------------------------------------------------------------------"
-  echo "Your configuration:"
-  echo "> Domain: $DOMAIN"
-  echo "> Database settings:"
+  /bin/echo "--------------------------------------------------------------------------------
+Your configuration:
+> Domain: $DOMAIN
+> Number of replicas: $NUMBER_OF_REPLICAS
+> Database settings:"
 
   if [[ $SETUP_DB = 1 ]]
   then
-    echo ">>> [A new database will be set]"
-    echo ">>> database: $DB_NAME"
-    echo ">>> username: $DB_USER"
-    echo ">>> password: $(mask "$DB_PASSWORD")"
-    echo ">>> connection string: $DB_CONNECTION_STRING_MASKED"
+    /bin/echo ">>> [A new database will be set]
+>>> database: $DB_NAME
+>>> username: $DB_USER
+>>> password: $(mask "$DB_PASSWORD")
+>>> connection string: $DB_CONNECTION_STRING_MASKED"
   else
-    echo ">>> [A new database won't be set]"
-    echo ">>> connection string: $DB_CONNECTION_STRING"
+    /bin/echo ">>> [A new database won't be set]
+>>> connection string: $DB_CONNECTION_STRING"
   fi
   
-  echo "> Telegram Bot token: $(mask "$TELEGRAM_BOT_TOKEN")"
-  echo "> Telegram Bot webhook secret: $(mask "$TELEGRAM_WEBHOOK_SECRET")"
-  echo "> Authorized user ids: $AUTHORIZED_USER_IDS"
-  echo "> Locale: $LOCALE"
-  echo "> Date/Time format: $DATETIME_FORMAT"
-  echo "> Sentry DSN: $(mask "$SENTRY_DSN")"
+  /bin/echo "> Telegram Bot token: $(mask "$TELEGRAM_BOT_TOKEN")
+> Telegram Bot webhook secret: $(mask "$TELEGRAM_WEBHOOK_SECRET")
+> Authorized user ids: $AUTHORIZED_USER_IDS
+> Locale: $LOCALE
+> Date/Time format: $DATETIME_FORMAT
+> Sentry DSN: $(mask "$SENTRY_DSN")"
 }
 
 unset_variables() {
   unset DOMAIN
+  unset NUMBER_OF_REPLICAS
   unset SETUP_DB
   unset DB_NAME
   unset DB_USER
@@ -209,114 +232,197 @@ prompt_input_double_checked() {
   done
 }
 
+generate_postgres_environment_file() {
+  /bin/echo "Generating postgres environment files..."
+  
+  [[ $SETUP_DB != 1 ]] && /bin/echo "Skipped."
+  
+  /bin/echo -n "POSTGRES_DB=$DB_NAME
+POSTGRES_USER='$DB_USER'
+POSTGRES_PASSWORD='$DB_PASSWORD'" > postgres.env
+
+  /bin/echo "Done."
+}
+
+generate_backend_environment_file() {
+  /bin/echo "Generating backend environment files..."
+  
+  /bin/echo -n "DOMAIN='$DOMAIN'
+DB_CONNECTION_STRING='$DB_CONNECTION_STRING'
+TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN'
+TELEGRAM_WEBHOOK_SECRET='$TELEGRAM_WEBHOOK_SECRET'
+AUTHORIZED_USER_IDS='$AUTHORIZED_USER_IDS'
+LOCALE='$LOCALE'
+DATETIME_FORMAT='$DATETIME_FORMAT'
+SENTRY_DSN='$SENTRY_DSN'" > backend.env
+
+  /bin/echo "Done."
+}
+
 generate_docker_compose() {
-  echo "Generating docker-compose.yml..."
+  /bin/echo "Generating docker-compose.yml..."
   
-  echo "
-  networks:
-    telegram-budget-lan:
-      driver: bridge" > docker-compose.yml
+  /bin/echo -n "networks:
+  backend-lan:
+    driver: bridge" > docker-compose.yml
   
-  [[ $SETUP_DB == 1 ]] && echo "
-    postgres-lan:
-      driver: bridge" >> docker-compose.yml
+  [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+  postgres-lan:
+    driver: bridge" >> docker-compose.yml
   
-  echo "
-  services:
+  /bin/echo
   
-    nginx:
-      image: nginx:latest
-      ports:
-        - \"80:80\"
-        - \"443:443\"
-      restart: always
-      volumes:
-        - ./nginx/conf/:/etc/nginx/conf.d/:ro
-        - ./certbot/www/:/var/www/certbot/:ro
-      networks:
-        - telegram-budget-lan
+  /bin/echo -n "
+services:
+  nginx:
+    depends_on:" >> docker-compose.yml
   
-    certbot:
-      image: certbot/certbot:latest
-      volumes:
-        - ./certbot/www/:/var/www/certbot/:rw
-        - ./certbot/conf/:/etc/letsencrypt/:rw" > docker-compose.yml
+  for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
+    do
+      /bin/echo -n "
+      - \"backend$REPLICA_NUMBER\"" >> docker-compose.yml
+    done
   
-  [[ $SETUP_DB == 1 ]] && echo "
-    postgres:
-      image: postgres:latest
-      ports:
-        - \"5432\"
-      restart: always
-      volumes:
-        - postgresql_volume:/var/lib/postgresql/data
-      environment:
-        POSTGRES_DB: \"$DB_NAME\"
-        POSTGRES_USER: \"$DB_USER\"
-        POSTGRES_PASSWORD: \"$DB_PASSWORD\"
-      networks:
-        - postgres-lan" >> docker-compose.yml
+  /bin/echo -n "
+    image: nginx:latest
+    ports:
+      - \"80:80\"
+      - \"443:443\"
+    restart: always
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/www/:/var/www/certbot/:ro
+    networks:
+      - backend-lan
+
+  certbot:
+    depends_on:
+      - \"nginx\"
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw" >> docker-compose.yml
   
-  echo "
-    telegram-budget:" >> docker-compose.yml
+  /bin/echo
   
-  [[ $SETUP_DB == 1 ]] && echo "
-      depends_on:
-        - \"postgres\""  >> docker-compose.yml
+  [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+  postgres:
+    image: postgres:latest
+    ports:
+      - \"5432\"
+    restart: always
+    volumes:
+      - postgresql_volume:/var/lib/postgresql/data
+    env_file:
+      - path: postgres.env
+        required: true
+    networks:
+      - postgres-lan" >> docker-compose.yml && /bin/echo
   
-  echo "
-      image: vorobalek/telegram-budget:latest
-      ports:
-        - \"80\"
-      restart: always
-      environment:
-        TELEGRAM_BOT_TOKEN: \"$TELEGRAM_BOT_TOKEN
-        TELEGRAM_WEBHOOK_SECRET: \"$TELEGRAM_WEBHOOK_SECRET
-        CONNECTION_STRING: \"$DB_CONNECTION_STRING\"
-        PORT: \"80\"
-        DOMAIN: \"$DOMAIN\"
-        AUTHORIZED_USER_IDS: \"$AUTHORIZED_USER_IDS\"
-        LOCALE: \"$LOCALE\"
-        DATETIME_FORMAT: \"$DATETIME_FORMAT\"
-        SENTRY_DSN: \"$SENTRY_DSN\"
-      networks:
-        - telegram-budget-lan"  >> docker-compose.yml
+  for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
+    do
+      /bin/echo -n "
+  backend$REPLICA_NUMBER:" >> docker-compose.yml
   
-  [[ $SETUP_DB == 1 ]] && echo "
-        - postgres-lan"  >> docker-compose.yml
+      [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+    depends_on:
+      - \"postgres\""  >> docker-compose.yml
   
-  echo "
-  volumes:"  >> docker-compose.yml
+      /bin/echo -n "
+    image: vorobalek/telegram-budget:latest
+    ports:
+      - \"80\"
+    restart: always
+    env_file:
+      - path: backend.env
+        required: true
+    environment:
+      PORT: \"80\"
+    networks:
+      - backend-lan"  >> docker-compose.yml
   
-  [[ $SETUP_DB == 1 ]] && echo "
-    postgresql_volume:" >> docker-compose.yml
+      [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+      - postgres-lan"  >> docker-compose.yml
+    done
+    
+  /bin/echo
+  
+  [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+volumes:
+  postgresql_volume:" >> docker-compose.yml
+
+  /bin/echo "Done."
 }
 
 generate_nginx_configuration() {
-  echo "Generating nginx configuration..."
+  /bin/echo "Generating nginx configuration..."
   
-  mkdir -p "nginx/conf" || (echo "Unable to create nginx/conf folder" && exit)
+  mkdir -p "nginx/conf" || (/bin/echo "Unable to create nginx/conf folder" && exit)
   
-  echo "
-  server {
-      listen 80;
-      listen [::]:80;
-      server_name $DOMAIN;
-      server_tokens off;
-      location /.well-known/acme-challenge/ {
-          root /var/www/certbot;
-      }
-      location / {
-          return 301 https://$DOMAIN\$request_uri;
-      }
+  /bin/echo
+  
+  /bin/echo -n "server {
+  listen 80;
+  listen [::]:80;
+  server_name $DOMAIN;
+  server_tokens off;
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
   }
-  " > nginx/conf/certbot.conf
+  location / {
+    return 301 https://$DOMAIN\$request_uri;
+  }
+}" > nginx/conf/"$DOMAIN".conf
+
+  /bin/echo "Done."
+}
+
+generate_certificates() {
+  /bin/echo "Issuing certificates..."
+
+  docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || (/bin/echo "Unable to check certificate issuing" && exit)
+  docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || (/bin/echo "Unable to issue certificate" && exit)
+
+  /bin/echo "Done."
+}
+
+update_nginx_configuration() {
+  /bin/echo "Updating nginx configuration..."
+  
+  /bin/echo -n "
+upstream backends {" >> nginx/conf/"$DOMAIN".conf
+  
+  for (( REPLICA_NUMBER=1; REPLICA_NUMBER<=NUMBER_OF_REPLICAS; REPLICA_NUMBER++ ))
+    do
+      /bin/echo -n "
+  server backend$REPLICA_NUMBER:80;" >> nginx/conf/"$DOMAIN".conf
+    done
+  /bin/echo "
+}" >> nginx/conf/"$DOMAIN".conf
+  
+  /bin/echo -n "
+server {
+  listen 443 default_server ssl http2;
+  listen [::]:443 ssl http2;
+  server_name $DOMAIN;
+  ssl_certificate /etc/nginx/ssl/live/$DOMAIN/fullchain.pem;
+  ssl_certificate_key /etc/nginx/ssl/live/$DOMAIN/privkey.pem;
+  location / {
+    proxy_pass backends;
+  }
+}" >> nginx/conf/"$DOMAIN".conf
+
+  /bin/echo "Done."
 }
 
 main() {
   prompt_input_double_checked
+  generate_backend_environment_file
+  generate_postgres_environment_file
   generate_docker_compose
   generate_nginx_configuration
+  #generate_certificates
+  update_nginx_configuration
 }
 
 main || exit

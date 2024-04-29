@@ -11,7 +11,7 @@
      -d \
      -e 'TELEGRAM_BOT_TOKEN=<...>' \
      -e 'TELEGRAM_WEBHOOK_SECRET=<...>' \
-     -e 'CONNECTION_STRING=<...>' \
+     -e 'DB_CONNECTION_STRING=<...>' \
      -e 'PORT=<...>' \
      -e 'DOMAIN=<...>' \ 
      -e 'AUTHORIZED_USER_IDS=<...>' \
@@ -31,7 +31,7 @@
 |---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------|-----------------------|
 | `TELEGRAM_BOT_TOKEN`      | Telegram Bot API token.                                                                                                                                                                                                                                            | YES      | YES    |                       |
 | `TELEGRAM_WEBHOOK_SECRET` | A secret token to be sent in a header `X-Telegram-Bot-Api-Secret-Token` in every webhook request, 1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_` and `-` are allowed. The header is useful to ensure that the request comes from a webhook set by you. | YES      | YES    |                       |
-| `CONNECTION_STRING`       | The connection string of the PostgreSQL database to connect to.                                                                                                                                                                                                    | YES      | YES    |                       |
+| `DB_CONNECTION_STRING`    | The connection string of the PostgreSQL database to connect to.                                                                                                                                                                                                    | YES      | YES    |                       |
 | `PORT`                    | The number of the port for receiving requests after SSL proxy if you have.                                                                                                                                                                                         | YES      | NO     | –                     |
 | `DOMAIN`                  | The domain to send Telegram updates to. SSL is required. The `https://` prefix will be added.                                                                                                                                                                      | YES      | NO     | –                     |
 | `AUTHORIZED_USER_IDS`     | A list of Telegram user IDs allowed to interact with the bot. List of numbers splitted by commas, spaces, or semicolons. Or `*` to authorize everyone.                                                                                                             | YES      | NO     | –                     |

@@ -56,7 +56,7 @@ var host = Host
                     httpClient));
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseNpgsql(AppConfiguration.ConnectionString ??
+                options.UseNpgsql(AppConfiguration.DbConnectionString ??
                                   context.Configuration.GetConnectionString("Default"));
             });
             services.AddCommonDatabaseFeatures<ApplicationDbContext>();
