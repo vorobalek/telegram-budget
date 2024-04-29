@@ -1,20 +1,25 @@
 #!/bin/bash
 
-NOW=$(date +%Y%m%d%H%M)
+set -e
 
-mkdir ./"$NOW"
+handle_error() {
+  printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed. Status: $?" >&2
 
-fallback() {
-  printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed."
-
-  printf " \033[31m %s \n\033[0m" "Rollback."
+  printf " \033[31m %s \n\033[0m" "Rollback..."
   docker compose -f ./"$NOW"/docker-compose.yml down
+  printf " \033[31m %s \n\033[0m" "Services stopped."
   docker compose -f ./"$NOW"/docker-compose.yml rm --force
-  rm -rf ./"$NOW"/
+  printf " \033[31m %s \n\033[0m" "Services removed."
+  rm -rf ./"$NOW"
+  printf " \033[31m %s \n\033[0m" "Installation folder removed."
   printf " \033[31m %s \n\033[0m" "Done."
 
-  exit
+  exit 1
 }
+
+trap 'handle_error' ERR SIGINT SIGQUIT SIGTSTP
+NOW=$(date +%Y%m%d%H%M)
+mkdir ./"$NOW"
 
 mask() {
   local __MASKED__
@@ -105,12 +110,12 @@ prompt_db_user() {
 }
 
 prompt_db_password() {
-  DB_PASSWORD=$(secure_input "Enter database password: ") || fallback
+  DB_PASSWORD=$(secure_input "Enter database password: ")
   /bin/echo
 }
 
 prompt_db_password_confirmation() {
-  DB_PASSWORD_CONFIRMATION=$(secure_input "Reply database password: ") || fallback
+  DB_PASSWORD_CONFIRMATION=$(secure_input "Reply database password: ")
   /bin/echo
 }
 
@@ -128,17 +133,17 @@ prompt_db_connection_string() {
     DB_CONNECTION_STRING="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$DB_PASSWORD"
     DB_CONNECTION_STRING_MASKED="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$(mask "$DB_PASSWORD")"
   else
-    read -rp "Enter database connection string: " DB_CONNECTION_STRING || fallback
+    read -rp "Enter database connection string: " DB_CONNECTION_STRING
   fi
 }
 
 prompt_telegram_bot_token() {
-  TELEGRAM_BOT_TOKEN=$(secure_input "Enter Telegram Bot token: ") || fallback
+  TELEGRAM_BOT_TOKEN=$(secure_input "Enter Telegram Bot token: ")
   /bin/echo
 }
 
 prompt_telegram_webhook_secret() {
-  TELEGRAM_WEBHOOK_SECRET=$(secure_input "Enter Telegram webhook secret: ") || fallback
+  TELEGRAM_WEBHOOK_SECRET=$(secure_input "Enter Telegram webhook secret: ")
   /bin/echo
 }
 
@@ -181,21 +186,21 @@ prompt_sentry_dsn() {
 }
 
 prompt_input() {
-  prompt_domain || fallback
-  prompt_number_of_replicas || fallback
-  if prompt_setup_db || fallback
+  prompt_domain
+  prompt_number_of_replicas
+  if prompt_setup_db
   then
-    prompt_db_name || fallback
-    prompt_db_user || fallback
-    prompt_db_password_double_checked || fallback
+    prompt_db_name
+    prompt_db_user
+    prompt_db_password_double_checked
   fi
-  prompt_db_connection_string || fallback
-  prompt_telegram_bot_token || fallback
-  prompt_telegram_webhook_secret || fallback
-  prompt_authorized_user_ids || fallback
-  prompt_locale || fallback
-  prompt_datetime_format || fallback
-  prompt_sentry_dsn || fallback
+  prompt_db_connection_string
+  prompt_telegram_bot_token
+  prompt_telegram_webhook_secret
+  prompt_authorized_user_ids
+  prompt_locale
+  prompt_datetime_format
+  prompt_sentry_dsn
 }
 
 print_configuration() {
@@ -226,29 +231,29 @@ Your configuration:
 }
 
 unset_variables() {
-  unset DOMAIN || fallback
-  unset NUMBER_OF_REPLICAS || fallback
-  unset SETUP_DB || fallback
-  unset DB_NAME || fallback
-  unset DB_USER || fallback
-  unset DB_PASSWORD || fallback
-  unset DB_PASSWORD_CONFIRMATION || fallback
-  unset DB_CONNECTION_STRING || fallback
-  unset DB_CONNECTION_STRING_MASKED || fallback
-  unset TELEGRAM_BOT_TOKEN || fallback
-  unset TELEGRAM_WEBHOOK_SECRET || fallback
-  unset AUTHORIZED_USER_IDS || fallback
-  unset LOCALE || fallback
-  unset DATETIME_FORMAT || fallback
-  unset SENTRY_DSN || fallback
+  unset DOMAIN
+  unset NUMBER_OF_REPLICAS
+  unset SETUP_DB
+  unset DB_NAME
+  unset DB_USER
+  unset DB_PASSWORD
+  unset DB_PASSWORD_CONFIRMATION
+  unset DB_CONNECTION_STRING
+  unset DB_CONNECTION_STRING_MASKED
+  unset TELEGRAM_BOT_TOKEN
+  unset TELEGRAM_WEBHOOK_SECRET
+  unset AUTHORIZED_USER_IDS
+  unset LOCALE
+  unset DATETIME_FORMAT
+  unset SENTRY_DSN
 }
 
 prompt_input_double_checked() {
   while true; do
-    unset_variables || fallback
-    prompt_input || fallback
-    print_configuration || fallback
-    if prompt_confirmation "Is everything correct" || fallback
+    unset_variables
+    prompt_input
+    print_configuration
+    if prompt_confirmation "Is everything correct"
     then
       break;
     fi
@@ -382,7 +387,7 @@ volumes:
 generate_nginx_configuration() {
   /bin/echo "Generating nginx configuration..."
 
-  mkdir -p "nginx/conf" || (/bin/echo "Unable to create ./$NOW/nginx/conf folder" && exit)
+  mkdir -p "./$NOW/nginx/conf" || (/bin/echo "Unable to create ./$NOW/nginx/conf folder" && exit)
 
   /bin/echo -n "server {
   listen 80;
@@ -403,8 +408,8 @@ generate_nginx_configuration() {
 generate_certificates() {
   /bin/echo "Issuing certificates..."
 
-  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || fallback
-  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || fallback
+  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || handle_error
+  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || handle_error
 
   /bin/echo "Done."
 }
@@ -442,13 +447,13 @@ server {
 }
 
 main() {
-  prompt_input_double_checked || fallback
-  generate_backend_environment_file || fallback
-  generate_postgres_environment_file || fallback
-  generate_docker_compose || fallback
-  generate_nginx_configuration || fallback
-  generate_certificates || fallback
-  update_nginx_configuration || fallback
+  prompt_input_double_checked
+  generate_backend_environment_file
+  generate_postgres_environment_file
+  generate_docker_compose
+  generate_nginx_configuration
+  generate_certificates
+  update_nginx_configuration
 }
 
 main || exit
