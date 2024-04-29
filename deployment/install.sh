@@ -265,10 +265,7 @@ generate_docker_compose() {
         - \"postgres\""  >> docker-compose.yml
   
   echo "
-      image: telegram-budget:latest
-      build:
-        context: .
-        dockerfile: Dockerfile
+      image: vorobalek/telegram-budget:latest
       ports:
         - \"80\"
       restart: always
