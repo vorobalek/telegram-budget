@@ -10,11 +10,9 @@ cleanup() {
 
 handle_error() {
   printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed. Status: $?" >&2
-
   printf " \033[31m %s \n\033[0m" "Cleaning up..."
   cleanup
   printf " \033[31m %s \n\033[0m" "Done."
-
   exit 1
 }
 
