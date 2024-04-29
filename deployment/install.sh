@@ -9,6 +9,7 @@ fallback() {
 
   printf " \033[31m %s \n\033[0m" "Rollback."
   docker compose -f ./"$NOW"/docker-compose.yml down
+  docker compose -f ./"$NOW"/docker-compose.yml rm --force
   rm -rf ./"$NOW"/
   printf " \033[31m %s \n\033[0m" "Done."
 
