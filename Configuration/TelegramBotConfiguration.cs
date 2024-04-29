@@ -7,13 +7,13 @@ public static class TelegramBotConfiguration
     public static readonly string BotToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN")!;
 
     public static readonly string WebhookSecretToken =
-        Environment.GetEnvironmentVariable("TELEGRAM_BOT_WEBHOOK_SECRET_TOKEN")!;
+        Environment.GetEnvironmentVariable("TELEGRAM_WEBHOOK_SECRET")!;
 
     public static readonly bool IsUserAuthorizationEnabled =
-        Environment.GetEnvironmentVariable("TELEGRAM_BOT_AUTHORIZED_USER_IDS") != "*";
+        Environment.GetEnvironmentVariable("AUTHORIZED_USER_IDS") != "*";
 
     public static readonly long[] AuthorizedUserIds =
-        Environment.GetEnvironmentVariable("TELEGRAM_BOT_AUTHORIZED_USER_IDS")!
+        Environment.GetEnvironmentVariable("AUTHORIZED_USER_IDS")!
             .Trim()
             .Split(',', ';', ' ')
             .Select(x => x.Trim())
