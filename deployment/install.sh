@@ -134,7 +134,7 @@ prompt_db_connection_string() {
   else
     DB_CONNECTION_STRING=$(secure_input "Enter database connection string: ") 
     /bin/echo
-    DB_CONNECTION_STRING_MASKED=$(mask DB_CONNECTION_STRING)
+    DB_CONNECTION_STRING_MASKED=$(mask "$DB_CONNECTION_STRING")
   fi
 }
 
