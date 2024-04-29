@@ -6,8 +6,9 @@ mkdir ./"$NOW"
 
 fallback() {
   printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed."
-  
+
   printf " \033[31m %s \n\033[0m" "Rollback."
+  docker compose -f ./"$NOW"/docker-compose.yml down
   rm -rf ./"$NOW"/
   printf " \033[31m %s \n\033[0m" "Done."
 
@@ -24,7 +25,7 @@ secure_input() {
   local __PASSWORD__=""
   local __CHAR_COUNT__=0
   local __PROMPT__=$1
-  
+
   while IFS= read -p "$__PROMPT__" -r -s -n 1 __CHAR__
   do
     if [[ $__CHAR__ == $'\0' ]] ; then
@@ -44,7 +45,7 @@ secure_input() {
       __PASSWORD__+="$__CHAR__"
     fi
   done
-  
+
   /bin/echo "$__PASSWORD__"
 }
 
@@ -57,7 +58,7 @@ prompt_number_of_replicas() {
   __IS_NUMBER_REGEX__='(^[0-9]+$)|(^$)'
   while true; do
     read -rp "Enter number of replicas (1 by default): " NUMBER_OF_REPLICAS
-    if [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]] 
+    if [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]]
     then
       if [[ $NUMBER_OF_REPLICAS -eq 0 ]]
       then
@@ -68,7 +69,7 @@ prompt_number_of_replicas() {
     else
       printf " \033[31m %s \n\033[0m" "invalid input"
     fi
-  done 
+  done
 }
 
 prompt_confirmation() {
@@ -79,8 +80,8 @@ prompt_confirmation() {
       [yY]) return 0 ;;
       [nN]) return 1 ;;
       *) printf " \033[31m %s \n\033[0m" "invalid input"
-    esac 
-  done 
+    esac
+  done
 }
 
 prompt_setup_db() {
@@ -145,10 +146,10 @@ prompt_authorized_user_ids() {
   __IS_NUMBER_SET_REGEX__='(^[0-9,; ]+$)|(^\*$)'
   while true; do
     read -rp "Enter authorized used ids (only digits, comma, and semicolon allowed. Or '*' to allow public access): " AUTHORIZED_USER_IDS
-    if [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]] 
+    if [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]]
     then
       return 0
-    else 
+    else
       printf " \033[31m %s \n\033[0m" "invalid input"
     fi
   done
@@ -162,8 +163,8 @@ prompt_locale() {
       "ru") return 0 ;;
       "") LOCALE="en" && return 0 ;;
       *) printf " \033[31m %s \n\033[0m" "invalid input"
-    esac 
-  done 
+    esac
+  done
 }
 
 prompt_datetime_format() {
@@ -214,7 +215,7 @@ Your configuration:
     /bin/echo ">>> [A new database won't be set]
 >>> connection string: $DB_CONNECTION_STRING"
   fi
-  
+
   /bin/echo "> Telegram Bot token: $(mask "$TELEGRAM_BOT_TOKEN")
 > Telegram Bot webhook secret: $(mask "$TELEGRAM_WEBHOOK_SECRET")
 > Authorized user ids: $AUTHORIZED_USER_IDS
@@ -255,9 +256,9 @@ prompt_input_double_checked() {
 
 generate_postgres_environment_file() {
   /bin/echo "Generating postgres environment files..."
-  
+
   [[ $SETUP_DB != 1 ]] && /bin/echo "Skipped."
-  
+
   /bin/echo -n "POSTGRES_DB=$DB_NAME
 POSTGRES_USER='$DB_USER'
 POSTGRES_PASSWORD='$DB_PASSWORD'" > ./"$NOW"/postgres.env
@@ -267,7 +268,7 @@ POSTGRES_PASSWORD='$DB_PASSWORD'" > ./"$NOW"/postgres.env
 
 generate_backend_environment_file() {
   /bin/echo "Generating backend environment files..."
-  
+
   /bin/echo -n "DOMAIN='$DOMAIN'
 DB_CONNECTION_STRING='$DB_CONNECTION_STRING'
 TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN'
@@ -282,29 +283,29 @@ SENTRY_DSN='$SENTRY_DSN'" > ./"$NOW"/backend.env
 
 generate_docker_compose() {
   /bin/echo "Generating docker-compose.yml..."
-  
+
   /bin/echo -n "networks:
   backend-lan:
     driver: bridge" > ./"$NOW"/docker-compose.yml
-  
+
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres-lan:
     driver: bridge" >> ./"$NOW"/docker-compose.yml
-  
+
   /bin/echo >> ./"$NOW"/docker-compose.yml
-  
+
   /bin/echo -n "
 services:
   nginx:
     depends_on:" >> ./"$NOW"/docker-compose.yml
-  
+
   REPLICA_NUMBER=1
   while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
     /bin/echo -n "
     - \"backend$REPLICA_NUMBER\"" >> ./"$NOW"/docker-compose.yml
     REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
   done
-  
+
   /bin/echo -n "
     image: nginx:latest
     ports:
@@ -324,9 +325,9 @@ services:
     volumes:
       - ./certbot/www/:/var/www/certbot/:rw
       - ./certbot/conf/:/etc/letsencrypt/:rw" >> ./"$NOW"/docker-compose.yml
-  
+
   /bin/echo >> ./"$NOW"/docker-compose.yml
-  
+
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres:
     image: postgres:latest
@@ -340,16 +341,16 @@ services:
         required: true
     networks:
       - postgres-lan" >> ./"$NOW"/docker-compose.yml && /bin/echo >> ./"$NOW"/docker-compose.yml
-  
+
   REPLICA_NUMBER=1
   while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
     /bin/echo -n "
   backend$REPLICA_NUMBER:" >> ./"$NOW"/docker-compose.yml
-  
+
     [[ $SETUP_DB == 1 ]] && /bin/echo -n "
     depends_on:
       - \"postgres\""  >> ./"$NOW"/docker-compose.yml
-  
+
     /bin/echo -n "
     image: vorobalek/telegram-budget:latest
     ports:
@@ -362,14 +363,14 @@ services:
       PORT: \"80\"
     networks:
       - backend-lan"  >> ./"$NOW"/docker-compose.yml
-  
+
     [[ $SETUP_DB == 1 ]] && /bin/echo -n "
       - postgres-lan"  >> ./"$NOW"/docker-compose.yml
-    
+
     /bin/echo >> ./"$NOW"/docker-compose.yml
     REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
   done
-  
+
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
 volumes:
   postgresql_volume:" >> ./"$NOW"/docker-compose.yml
@@ -379,9 +380,9 @@ volumes:
 
 generate_nginx_configuration() {
   /bin/echo "Generating nginx configuration..."
-  
+
   mkdir -p "nginx/conf" || (/bin/echo "Unable to create ./$NOW/nginx/conf folder" && exit)
-  
+
   /bin/echo -n "server {
   listen 80;
   listen [::]:80;
@@ -401,19 +402,19 @@ generate_nginx_configuration() {
 generate_certificates() {
   /bin/echo "Issuing certificates..."
 
-  docker-compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || fallback
-  docker-compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || fallback
+  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d "$DOMAIN" || fallback
+  docker compose -f ./"$NOW"/docker-compose.yml run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d "$DOMAIN" || fallback
 
   /bin/echo "Done."
 }
 
 update_nginx_configuration() {
   /bin/echo "Updating nginx configuration..."
-  
+
   /bin/echo -n "
 
 upstream backends {" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
-  
+
   REPLICA_NUMBER=1
   while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
     /bin/echo -n "
@@ -423,7 +424,7 @@ upstream backends {" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
 
   /bin/echo "
 }" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
-  
+
   /bin/echo -n "
 server {
   listen 443 default_server ssl http2;
