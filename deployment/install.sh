@@ -135,6 +135,7 @@ prompt_db_connection_string() {
     DB_CONNECTION_STRING_MASKED="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$(mask "$DB_PASSWORD")"
   else
     DB_CONNECTION_STRING=$(secure_input "Enter database connection string: ") 
+    /bin/echo
     DB_CONNECTION_STRING_MASKED=$(mask DB_CONNECTION_STRING)
   fi
 }
@@ -184,7 +185,8 @@ prompt_datetime_format() {
 }
 
 prompt_sentry_dsn() {
-  SENTRY_DSN=$(secure_input "Enter Sentry DSN (or press enter to skip): ")
+  SENTRY_DSN=$(secure_input "Enter Sentry DSN (or press enter to skip): ") 
+  /bin/echo
 }
 
 prompt_input() {
