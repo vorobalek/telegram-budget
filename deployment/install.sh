@@ -5,6 +5,7 @@ set -e
 cleanup() {
   docker compose -f ./"$NOW"/docker-compose.yml down -v
   docker compose -f ./"$NOW"/docker-compose.yml rm
+  rm -rf ./"$NOW"
 }
 
 handle_error() {
@@ -12,7 +13,7 @@ handle_error() {
 
   printf " \033[31m %s \n\033[0m" "Cleaning up..."
   cleanup
-  printf " \033[31m %s \n\033[0m" "Done. Artifacts has been kept."
+  printf " \033[31m %s \n\033[0m" "Done."
 
   exit 1
 }
@@ -56,7 +57,7 @@ secure_input() {
 }
 
 prompt_domain() {
-  read -rp "Enter domain: " DOMAIN
+  read -rp "Enter domain (The folder with the same name will be created): " DOMAIN
 }
 
 prompt_number_of_replicas() {
@@ -133,7 +134,8 @@ prompt_db_connection_string() {
     DB_CONNECTION_STRING="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$DB_PASSWORD"
     DB_CONNECTION_STRING_MASKED="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$(mask "$DB_PASSWORD")"
   else
-    read -rp "Enter database connection string: " DB_CONNECTION_STRING
+    DB_CONNECTION_STRING=$(secure_input "Enter database connection string: ") 
+    DB_CONNECTION_STRING_MASKED=$(mask DB_CONNECTION_STRING)
   fi
 }
 
@@ -182,7 +184,7 @@ prompt_datetime_format() {
 }
 
 prompt_sentry_dsn() {
-  read -rp "Enter Sentry DSN (or press enter to skip): " SENTRY_DSN
+  SENTRY_DSN=$(secure_input "Enter Sentry DSN (or press enter to skip): ")
 }
 
 prompt_input() {
@@ -219,7 +221,7 @@ Your configuration:
 >>> connection string: $DB_CONNECTION_STRING_MASKED"
   else
     /bin/echo ">>> [A new database won't be set]
->>> connection string: $DB_CONNECTION_STRING"
+>>> connection string: $DB_CONNECTION_STRING_MASKED"
   fi
 
   /bin/echo "> Telegram Bot token: $(mask "$TELEGRAM_BOT_TOKEN")
@@ -320,6 +322,7 @@ services:
     restart: always
     volumes:
       - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
       - ./certbot/www/:/var/www/certbot/:ro
     networks:
       - backend-lan
@@ -438,8 +441,21 @@ server {
   server_name $DOMAIN;
   ssl_certificate /etc/nginx/ssl/live/$DOMAIN/fullchain.pem;
   ssl_certificate_key /etc/nginx/ssl/live/$DOMAIN/privkey.pem;
+  location /health {
+    proxy_pass http://backends;
+  }
+  location /bot {
+    proxy_pass http://backends;
+  }
   location / {
-    proxy_pass backends;
+    return 302 https://youtu.be/dQw4w9WgXcQ?si=YgqFHwW3_gusiTFf&t=43;
+
+    add_header Content-Type \"application/json\";
+    add_header Location \"https://youtu.be/dQw4w9WgXcQ?si=YgqFHwW3_gusiTFf&t=43\";
+    add_header Reason \"You've been rick-rolled.\";
+
+    default_type application/json;
+    return 302 \"{\\\"message\\\": \\\"You've been rick-rolled.\\\"}\";
   }
 }" >> ./"$NOW"/nginx/conf/"$DOMAIN".conf
 
@@ -447,7 +463,7 @@ server {
 }
 
 copy_installed() {
-  cp -r ./"$NOW"/* ./ || handle_error
+  cp -r ./"$NOW"/* ./"$DOMAIN"
 }
 
 main() {
@@ -460,7 +476,6 @@ main() {
   update_nginx_configuration
   copy_installed
   cleanup
-  rm install.sh || true
 }
 
 main || exit
