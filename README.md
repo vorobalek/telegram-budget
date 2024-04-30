@@ -1,13 +1,15 @@
 # Try it out
 > [@BUDGET_DEMO_BOT](https://t.me/budget_demo_bot)
 
-# How to run
-1. ```shell
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/patch/2404291253-add-install.sh/deployment/install.sh)"
+# Docker Compose installation 
+> docker and docker compose required
+1. Run
+   ```shell
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/main/deployment/install-docker-compose.sh)"
    ```
-2. //TODO
+2. Follow the installation script instruction.
 
-# How to build
+# Build
 
 1. ```shell
    docker build -t <image nametag> .
