@@ -35,10 +35,10 @@ public sealed class HistoryPrefixBotCommand(
 
         var currentAmount = 0m;
         await budget.Transactions.OrderBy(e => e.CreatedAt).SendPaginatedAsync(
+            4096,
             (pageBuilder, pageNumber) =>
                 pageBuilder.AppendLine(
-                    string.Format(TR.L + "HISTORY_INTRO", budget.Name.EscapeHtml(), pageNumber)),
-            transaction =>
+                    string.Format(TR.L + "HISTORY_INTRO", budget.Name.EscapeHtml(), pageNumber)), transaction =>
             {
                 var currentString =
                     $"{currentAmount:0.00} " +
@@ -61,21 +61,17 @@ public sealed class HistoryPrefixBotCommand(
                     "</i>";
                 currentAmount += transaction.Amount;
                 return currentString;
-            },
-            (pageBuilder, currentString) =>
+            }, (pageBuilder, currentString) =>
             {
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine(currentString);
-            },
-            async (pageContent, token) =>
+            }, async (pageContent, token) =>
                 await bot
                     .SendTextMessageAsync(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
-                        cancellationToken: token),
-            4096,
-            cancellationToken);
+                        cancellationToken: token), cancellationToken);
     }
 }

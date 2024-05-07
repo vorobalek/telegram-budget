@@ -4,6 +4,7 @@ using Telegram.Flow.Updates;
 using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi.PreHandler;
 using User = TelegramBudget.Data.Entities.User;
 
 namespace TelegramBudget.Services.TelegramApi;
@@ -11,7 +12,7 @@ namespace TelegramBudget.Services.TelegramApi;
 internal sealed class TelegramApiService(
     ICurrentUserService currentUserService,
     ApplicationDbContext db,
-    IPreHandler preHandler,
+    IPreHandlerService preHandlerService,
     IEnumerable<IUpdateHandler> handlers)
     : ITelegramApiService
 {
@@ -61,7 +62,7 @@ internal sealed class TelegramApiService(
 
     private async Task ProcessUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        await preHandler.ProcessAsync(update, cancellationToken);
+        await preHandlerService.PreHandleAsync(update, cancellationToken);
         await Task.WhenAll(handlers.Select(handler => handler.ProcessAsync(update, cancellationToken)));
     }
 }

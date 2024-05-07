@@ -154,12 +154,12 @@ public sealed class RevokeBotCommand(
         if (budgets.Count != 1)
         {
             await budgets.SendPaginatedAsync(
+                4096,
                 (pageBuilder, pageNumber) =>
                 {
                     pageBuilder.Append(string.Format(TR.L + "CHOOSE_BUDGET_REVOKE", budgetName.EscapeHtml(),
                         pageNumber, userToShare.GetFullNameLink()));
-                },
-                budget =>
+                }, budget =>
                 {
                     return $"{budget.Name.EscapeHtml()} " +
                            "<i>(" +
@@ -171,21 +171,17 @@ public sealed class RevokeBotCommand(
                            ")</i>" +
                            " ➡️ " +
                            $"/revoke_{userToShareId}_{budget.Id:N}";
-                },
-                (pageBuilder, currentString) =>
+                }, (pageBuilder, currentString) =>
                 {
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
-                },
-                async (pageContent, token) =>
+                }, async (pageContent, token) =>
                     await bot
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,
-                            cancellationToken: token),
-                4096,
-                cancellationToken);
+                            cancellationToken: token), cancellationToken);
             return null;
         }
 

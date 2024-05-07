@@ -46,7 +46,7 @@ public sealed class CmdAllCallback(
                 stringBuilder.ToString(),
                 parseMode: ParseMode.Html,
                 disableWebPagePreview: true,
-                replyMarkup: Common.BackToMainInlineKeyboard,
+                replyMarkup: Keyboards.BackToMainInline,
                 cancellationToken: cancellationToken);
     }
 }

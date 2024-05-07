@@ -16,7 +16,7 @@ public sealed class StartBotCommand(
                 TR.L + "START_GREETING",
                 parseMode: ParseMode.Html,
                 disableWebPagePreview: true,
-                replyMarkup: Common.CmdAllInlineKeyboard,
+                replyMarkup: Keyboards.CmdAllInline,
                 cancellationToken: cancellationToken);
     }
 }

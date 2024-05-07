@@ -43,8 +43,7 @@ var host = Host
                     "missing-translation-keys.txt");
                 options.MissingTranslationKeyOutputDelegate = translationKey =>
                 {
-                    File.AppendAllLines(path,
-                        new[] { translationKey });
+                    File.AppendAllLines(path, [translationKey]);
                 };
 #endif
             });

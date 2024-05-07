@@ -21,7 +21,7 @@ public sealed class MainCallback(
                 callbackQueryMessage.MessageId,
                 TR.L + "START_GREETING",
                 parseMode: ParseMode.Html,
-                replyMarkup: Common.CmdAllInlineKeyboard,
+                replyMarkup: Keyboards.CmdAllInline,
                 cancellationToken: cancellationToken);
     }
 }

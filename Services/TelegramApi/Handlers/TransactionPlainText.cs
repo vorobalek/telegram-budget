@@ -39,7 +39,7 @@ public sealed class TransactionPlainText(
 
         var oldBudgetSum = user.ActiveBudget.Transactions.Sum(e => e.Amount);
 
-        var newTransaction = new Data.Entities.Transaction
+        var newTransaction = new Transaction
         {
             Amount = amount,
             BudgetId = user.ActiveBudget.Id,

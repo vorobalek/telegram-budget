@@ -95,35 +95,31 @@ public sealed class DeleteBotCommand(
         if (budgets.Count != 1)
         {
             await budgets.SendPaginatedAsync(
+                4096,
                 (pageBuilder, pageNumber) =>
                 {
                     pageBuilder.AppendLine(string.Format(TR.L + "CHOOSE_BUDGET_DELETE", budgetName.EscapeHtml(),
                         pageNumber));
-                },
-                budget => $"{budget.Name.EscapeHtml()} " +
-                          "<i>(" +
-                          (budget.Owner is not { } owner
-                              ? TR.L + "OWNER_UNKNOWN"
-                              : owner.Id == currentUserService.TelegramUser.Id
-                                  ? TR.L + "OWNER_YOU"
-                                  : string.Format(TR.L + "OWNER_USER", budget.Owner.GetFullNameLink())) +
-                          ")</i>" +
-                          " ➡️ " +
-                          $"/delete_{budget.Id:N}",
-                (pageBuilder, currentString) =>
+                }, budget => $"{budget.Name.EscapeHtml()} " +
+                             "<i>(" +
+                             (budget.Owner is not { } owner
+                                 ? TR.L + "OWNER_UNKNOWN"
+                                 : owner.Id == currentUserService.TelegramUser.Id
+                                     ? TR.L + "OWNER_YOU"
+                                     : string.Format(TR.L + "OWNER_USER", budget.Owner.GetFullNameLink())) +
+                             ")</i>" +
+                             " ➡️ " +
+                             $"/delete_{budget.Id:N}", (pageBuilder, currentString) =>
                 {
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
-                },
-                async (pageContent, token) =>
+                }, async (pageContent, token) =>
                     await bot
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,
-                            cancellationToken: token),
-                4096,
-                cancellationToken);
+                            cancellationToken: token), cancellationToken);
             return null;
         }
 

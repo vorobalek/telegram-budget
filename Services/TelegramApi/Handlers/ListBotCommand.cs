@@ -39,8 +39,8 @@ public sealed class ListBotCommand(
         }
 
         await budgets.SendPaginatedAsync(
-            (pageBuilder, pageNumber) => { pageBuilder.Append(string.Format(TR.L + "LIST_INTRO", pageNumber)); },
-            budget =>
+            4096,
+            (pageBuilder, pageNumber) => { pageBuilder.Append(string.Format(TR.L + "LIST_INTRO", pageNumber)); }, budget =>
             {
                 var (@in, @out) = user.ActiveBudgetId == budget.Id
                     ? ("<b>", "</b>")
@@ -55,20 +55,16 @@ public sealed class ListBotCommand(
                                ? TR.L + "OWNER_YOU"
                                : string.Format(TR.L + "OWNER_USER", budget.Owner.GetFullNameLink())) +
                        ")</i>";
-            },
-            (pageBuilder, currentString) =>
+            }, (pageBuilder, currentString) =>
             {
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine(currentString);
-            },
-            async (pageContent, token) =>
+            }, async (pageContent, token) =>
                 await bot
                     .SendTextMessageAsync(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
-                        cancellationToken: token),
-            4096,
-            cancellationToken);
+                        cancellationToken: token), cancellationToken);
     }
 }

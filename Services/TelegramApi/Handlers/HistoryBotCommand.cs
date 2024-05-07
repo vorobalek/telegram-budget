@@ -35,10 +35,10 @@ public sealed class HistoryBotCommand(
 
         var currentAmount = 0m;
         await budget.Transactions.OrderBy(e => e.CreatedAt).SendPaginatedAsync(
+            4096,
             (pageBuilder, pageNumber) =>
                 pageBuilder.AppendLine(
-                    string.Format(TR.L + "HISTORY_INTRO", budget.Name.EscapeHtml(), pageNumber)),
-            transaction =>
+                    string.Format(TR.L + "HISTORY_INTRO", budget.Name.EscapeHtml(), pageNumber)), transaction =>
             {
                 var currentString =
                     $"{currentAmount:0.00} " +
@@ -61,22 +61,18 @@ public sealed class HistoryBotCommand(
                     "</i>";
                 currentAmount += transaction.Amount;
                 return currentString;
-            },
-            (pageBuilder, currentString) =>
+            }, (pageBuilder, currentString) =>
             {
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine(currentString);
-            },
-            async (pageContent, token) =>
+            }, async (pageContent, token) =>
                 await bot
                     .SendTextMessageAsync(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
-                        cancellationToken: token),
-            4096,
-            cancellationToken);
+                        cancellationToken: token), cancellationToken);
     }
     
     private async Task<Budget?> ExtractBudgetAsync(string budgetName, User user, CancellationToken cancellationToken)
@@ -123,35 +119,31 @@ public sealed class HistoryBotCommand(
         if (budgets.Count != 1)
         {
             await budgets.SendPaginatedAsync(
+                4096,
                 (pageBuilder, pageNumber) =>
                 {
                     pageBuilder.AppendLine(string.Format(TR.L + "CHOOSE_BUDGET_HISTORY", budgetName.EscapeHtml(),
                         pageNumber));
-                },
-                budget => $"{budget.Name.EscapeHtml()} " +
-                          "<i>(" +
-                          (budget.Owner is not { } owner
-                              ? TR.L + "OWNER_UNKNOWN"
-                              : owner.Id == currentUserService.TelegramUser.Id
-                                  ? TR.L + "OWNER_YOU"
-                                  : string.Format(TR.L + "OWNER_USER", budget.Owner.GetFullNameLink())) +
-                          ")</i>" +
-                          " ➡️ " +
-                          $"/history_{budget.Id:N}",
-                (pageBuilder, currentString) =>
+                }, budget => $"{budget.Name.EscapeHtml()} " +
+                             "<i>(" +
+                             (budget.Owner is not { } owner
+                                 ? TR.L + "OWNER_UNKNOWN"
+                                 : owner.Id == currentUserService.TelegramUser.Id
+                                     ? TR.L + "OWNER_YOU"
+                                     : string.Format(TR.L + "OWNER_USER", budget.Owner.GetFullNameLink())) +
+                             ")</i>" +
+                             " ➡️ " +
+                             $"/history_{budget.Id:N}", (pageBuilder, currentString) =>
                 {
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
-                },
-                async (pageContent, token) =>
+                }, async (pageContent, token) =>
                     await bot
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,
-                            cancellationToken: token),
-                4096,
-                cancellationToken);
+                            cancellationToken: token), cancellationToken);
             return null;
         }
 

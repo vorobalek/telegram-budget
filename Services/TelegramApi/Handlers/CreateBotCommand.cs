@@ -26,10 +26,7 @@ public sealed class CreateBotCommand(
         var newBudget = new Budget
         {
             Name = budgetName,
-            ActiveUsers = new[]
-            {
-                user
-            }
+            ActiveUsers = [user]
         };
         await db.Budgets.AddAsync(newBudget, cancellationToken);
 
