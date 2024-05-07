@@ -1,4 +1,4 @@
-﻿{
+{
   "profiles": {
     "TelegramBudget": {
       "commandName": "Project",
@@ -8,11 +8,11 @@
 
         "DOMAIN": "",
         "PORT": "8080",
-        "CONNECTION_STRING": "",
+        "DB_CONNECTION_STRING": "",
 
         "TELEGRAM_BOT_TOKEN": "",
-        "TELEGRAM_BOT_AUTHORIZED_USER_IDS": "",
-        "TELEGRAM_BOT_WEBHOOK_SECRET_TOKEN": "",
+        "AUTHORIZED_USER_IDS": "",
+        "TELEGRAM_WEBHOOK_SECRET": "",
 
         "LOCALE": "en",
         "DATE_FORMAT": "MM/dd/yyyy",
