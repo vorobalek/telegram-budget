@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types;
 using Telegram.Flow.Updates;
@@ -18,13 +19,23 @@ internal sealed class TelegramApiService(
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
         if (await GetUserAsync(cancellationToken) is not { } user) user = await CreateUserAsync(cancellationToken);
 
         if (TelegramBotConfiguration.IsUserAuthorizationEnabled && !await IsUserAuthorizedAsync(cancellationToken))
             return;
 
         await UpdateUserAsync(user, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
         await ProcessUpdateAsync(update, cancellationToken);
+    }
+
+    private async Task<User?> GetUserAsync(CancellationToken cancellationToken)
+    {
+        return await db.Users.SingleOrDefaultAsync(
+            user => user.Id == currentUserService.TelegramUser.Id,
+            cancellationToken);
     }
 
     private async Task<User> CreateUserAsync(CancellationToken cancellationToken)
@@ -46,13 +57,6 @@ internal sealed class TelegramApiService(
         user.LastName = currentUserService.TelegramUser.LastName;
         db.Update(user);
         await db.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task<User?> GetUserAsync(CancellationToken cancellationToken)
-    {
-        return await db.Users.SingleOrDefaultAsync(
-            user => user.Id == currentUserService.TelegramUser.Id,
-            cancellationToken);
     }
 
     private Task<bool> IsUserAuthorizedAsync(CancellationToken cancellationToken)

@@ -1,19 +1,21 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.DateTimeProvider;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class TimezoneBotCommand(
-    ITelegramBotClient bot,
+    ITelegramBotClientWrapper bot,
     ICurrentUserService currentUserService,
-    ApplicationDbContext db)
+    ApplicationDbContext db,
+    IDateTimeProvider dateTime)
 {
     public async Task ProcessAsync(string data, CancellationToken cancellationToken)
     {
@@ -31,7 +33,7 @@ public sealed class TimezoneBotCommand(
             responseMessageBuilder.AppendLine(
                 string.Format(
                     TR.L + "TIME_CURRENT",
-                    TR.L + DateTime.UtcNow.Add(user.TimeZone) + AppConfiguration.DateTimeFormat));
+                    TR.L + dateTime.UtcNow().DateTime.Add(user.TimeZone) + AppConfiguration.DateTimeFormat));
             responseMessageBuilder.AppendLine();
             responseMessageBuilder.AppendLine(TR.L + "TIMEZONE_EXAMPLE");
 
@@ -57,7 +59,7 @@ public sealed class TimezoneBotCommand(
         responseMessageBuilder.AppendLine(
             string.Format(
                 TR.L + "TIME_CURRENT",
-                TR.L + DateTime.UtcNow.Add(user.TimeZone) + AppConfiguration.DateTimeFormat));
+                TR.L + dateTime.UtcNow().DateTime.Add(user.TimeZone) + AppConfiguration.DateTimeFormat));
 
         await bot
             .SendTextMessageAsync(

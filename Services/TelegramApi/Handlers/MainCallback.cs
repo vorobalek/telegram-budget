@@ -1,12 +1,12 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class MainCallback(
-    ITelegramBotClient bot,
+    ITelegramBotClientWrapper bot,
     ICurrentUserService currentUserService)
 {
     public Task ProcessAsync(

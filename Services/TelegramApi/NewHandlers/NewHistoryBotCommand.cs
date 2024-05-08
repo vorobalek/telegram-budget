@@ -1,19 +1,17 @@
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBudget.Configuration;
 using TelegramBudget.Data;
-using TelegramBudget.Data.Entities;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
-using User = TelegramBudget.Data.Entities.User;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.NewHandlers;
 
 public class NewHistoryBotCommand(
-    ITelegramBotClient bot,
+    ITelegramBotClientWrapper bot,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -24,58 +22,22 @@ public class NewHistoryBotCommand(
     {
         if (callbackQueryMessage is null) return;
 
-        var user = await GetUserAsync(cancellationToken);
-
         var (budgetId, pageNumber) = ParseArguments(data);
+        var userData = await GetUserDataAsync(cancellationToken);
 
-        if (await GetBudgetAsync(budgetId, user, cancellationToken) is not { } budget)
-        {
-            await SubmitAsync(
-                TR.L + "NO_BUDGET",
-                callbackQueryMessage.MessageId,
-                cancellationToken);
-            return;
-        }
+        var reply = await PrepareReplyAsync(
+            budgetId ?? userData.ActiveBudgetId,
+            pageNumber,
+            userData.TimeZone,
+            cancellationToken);
 
-        if (budget.Transactions.Count == 0)
-        {
-            await SubmitAsync(
-                string.Format(TR.L + "NO_TRANSACTIONS", budget.Name.EscapeHtml()),
-                callbackQueryMessage.MessageId,
-                cancellationToken);
-            return;
-        }
-
-        if (GetPageContent(
-                pageNumber,
-                budget, 
-                budget.Transactions, 
-                user, 
-                out var actualPageNumber,
-                out var actualPageCount) is not { } pageContent)
-        {
-            await SubmitAsync(
-                string.Format(TR.L + "NO_HISTORY_PAGE", pageNumber),
-                callbackQueryMessage.MessageId,
-                cancellationToken);
-            return;
-        }
-
-        await SubmitAsync(
-            pageContent,
+        await SubmitReplyAsync(
             callbackQueryMessage.MessageId,
-            cancellationToken,
-            $"{budget.Id:N}",
-            actualPageNumber,
-            actualPageCount);
+            reply,
+            cancellationToken);
     }
 
-    private Task<User> GetUserAsync(CancellationToken cancellationToken)
-    {
-        return db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
-    }
-
-    private (Guid? budgetId, int pageNumber) ParseArguments(string data)
+    private static (Guid? budgetId, int pageNumber) ParseArguments(string data)
     {
         var arguments = data.Split('.').Skip(1).ToArray();
         
@@ -87,50 +49,115 @@ public class NewHistoryBotCommand(
         return (budgetId, pageNumber);
     }
 
-    private Task<Budget?> GetBudgetAsync(Guid? budgetId, User user, CancellationToken cancellationToken)
+    private async Task<(Guid? ActiveBudgetId, TimeSpan TimeZone)> GetUserDataAsync(CancellationToken cancellationToken)
     {
-        return budgetId is not null 
-            ? db.Budgets.SingleOrDefaultAsync(e => e.Id == budgetId, cancellationToken) 
-            : Task.FromResult(user.ActiveBudget);
+        var data = await db.Users
+            .Where(e => e.Id == currentUserService.TelegramUser.Id)
+            .Select(e => new
+            {
+                e.ActiveBudgetId, 
+                e.TimeZone
+            })
+            .SingleAsync(cancellationToken);
+
+        return (data.ActiveBudgetId, data.TimeZone);
     }
 
-    private string? GetPageContent(
+    private async Task<(string Text, string? BudgetSlug, int PageNumber, int PageCount)> PrepareReplyAsync(
+        Guid? budgetId,
+        int pageNumber,
+        TimeSpan timeZone,
+        CancellationToken cancellationToken)
+    {
+        if (!budgetId.HasValue || 
+            await GetBudgetNameAsync(budgetId.Value, cancellationToken) is not { } budgetName)
+            return (TR.L + "NO_BUDGET", null, 0, 0);
+
+        var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
+        if (transactions.Count == 0)
+            return (string.Format(TR.L + "NO_TRANSACTIONS", budgetName.EscapeHtml()), null, 0, 0);
+        
+        var pageContent = BuildPageContent(
+            pageNumber,
+            budgetName,
+            transactions,
+            timeZone,
+            out var actualPageNumber,
+            out var actualPageCount);
+        if (string.IsNullOrWhiteSpace(pageContent))
+            return (string.Format(TR.L + "NO_PAGE_CONTENT", pageNumber), null, 0, 0);
+
+        return (pageContent, $"{budgetId:N}", actualPageNumber, actualPageCount);
+    }
+
+    private Task<string?> GetBudgetNameAsync(Guid budgetId, CancellationToken cancellationToken)
+    {
+        return db.Budgets
+            .Where(e => e.Id == budgetId)
+            .Select(e => e.Name)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<
+        ICollection<(
+            decimal BeforeSum,
+            decimal Amount,
+            string? Comment,
+            DateTime CreatedAt,
+            string AuthorUrl)>
+    > GetTransactionsReversedAsync(Guid budgetId, CancellationToken cancellationToken)
+    {
+        var data = await db.Transactions
+            .Where(e => e.BudgetId == budgetId)
+            .Include(e => e.Author)
+            .Select(e => new
+            {
+                e.Amount,
+                e.Comment,
+                e.CreatedAt,
+                AuthorId = e.Author.Id,
+                AuthorFirstName = e.Author.FirstName,
+                AuthorLastName = e.Author.LastName
+            })
+            .OrderByDescending(e => e.CreatedAt)
+            .ToArrayAsync(cancellationToken);
+
+        var currentSum = 0m;
+        return data.Select(e =>
+            {
+                var transaction = (
+                    currentSum,
+                    e.Amount,
+                    e.Comment,
+                    e.CreatedAt,
+                    TelegramHelper.GetFullNameLink(e.AuthorId, e.AuthorFirstName, e.AuthorLastName));
+                currentSum += e.Amount;
+                return transaction;
+            })
+            .ToArray();
+    }
+
+    private static string? BuildPageContent(
         int requestedPageNumber,
-        Budget budget, 
-        ICollection<Transaction> budgetTransactions,
-        User user,
+        string budgetName, 
+        IEnumerable<(decimal BeforeSum, decimal Amount, string? Comment, DateTime CreatedAt, string AuthorUrl)> transactions,
+        TimeSpan timeZone,
         out int actualPageNumber,
         out int actualPageCount)
     {
-        var currentSum = 0m;
-        var reversedTransactions = budgetTransactions
-            .Select(transaction =>
-            {
-                var transactionModel = new
-                {
-                    BeforeSum = currentSum,
-                    AfterSum = currentSum + transaction.Amount,
-                    transaction.Amount,
-                    transaction.Comment,
-                    transaction.Author,
-                    transaction.CreatedAt
-                };
-                currentSum += transaction.Amount;
-                return transactionModel;
-            })
-            .OrderByDescending(x => x.CreatedAt);
-
-        var pageContent = reversedTransactions
+        var pageContent = transactions
             .CreatePage(
                 768,
                 requestedPageNumber,
                 (pageBuilder, pageNumber) =>
                     pageBuilder.AppendLine(
-                        string.Format(TR.L + "HISTORY_INTRO", budget.Name.EscapeHtml(), pageNumber)),
+                        string.Format(TR.L + "HISTORY_INTRO", budgetName.EscapeHtml(), pageNumber)),
                 transaction =>
                     $"{transaction.BeforeSum:0.00} " +
-                    $"<b>{(transaction.Amount >= 0 ? "➕ " + transaction.Amount.ToString("0.00") : "➖ " + Math.Abs(transaction.Amount).ToString("0.00"))}</b> " +
-                    $"➡️ {transaction.AfterSum:0.00}" +
+                    $"<b>{(transaction.Amount >= 0 
+                        ? $"➕ {transaction.Amount:0.00}" 
+                        : $"➖ {Math.Abs(transaction.Amount):0.00}")}</b> " +
+                    $"➡️ {transaction.BeforeSum + transaction.Amount:0.00}" +
                     (transaction.Comment is not null
                         ? Environment.NewLine +
                           Environment.NewLine +
@@ -141,10 +168,10 @@ public class NewHistoryBotCommand(
                     "<i>" +
                     string.Format(
                         TR.L + "ADDED_NOTICE",
-                        user.TimeZone == TimeSpan.Zero
+                        timeZone == TimeSpan.Zero
                             ? TR.L + transaction.CreatedAt + AppConfiguration.DateTimeFormat + " UTC"
-                            : TR.L + transaction.CreatedAt.Add(user.TimeZone) + AppConfiguration.DateTimeFormat,
-                        transaction.Author.GetFullNameLink()) +
+                            : TR.L + transaction.CreatedAt.Add(timeZone) + AppConfiguration.DateTimeFormat,
+                        transaction.AuthorUrl) +
                     "</i>",
                 (pageBuilder, currentString) =>
                 {
@@ -158,30 +185,27 @@ public class NewHistoryBotCommand(
         return pageContent;
     }
 
-    private Task SubmitAsync(
-        string text,
+    private Task<Message> SubmitReplyAsync(
         int messageId,
-        CancellationToken cancellationToken,
-        string? budgetSlug = null,
-        int actualPageNumber = 0, 
-        int actualPageCount = 0)
+        (string Text, string? BudgetSlug, int PageNumber, int PageCount) reply,
+        CancellationToken cancellationToken)
     {
         var keyboard = GetKeyboard(
-            budgetSlug,
-            actualPageNumber, 
-            actualPageCount);
+            reply.BudgetSlug,
+            reply.PageNumber, 
+            reply.PageCount);
         
         return bot
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 messageId,
-                text,
+                reply.Text,
                 parseMode: ParseMode.Html,
                 replyMarkup: keyboard,
                 cancellationToken: cancellationToken);
     }
 
-    private InlineKeyboardMarkup GetKeyboard(
+    private static InlineKeyboardMarkup GetKeyboard(
         string? budgetSlug,
         int actualPageNumber,
         int actualPageCount)

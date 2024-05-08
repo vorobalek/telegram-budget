@@ -1,11 +1,11 @@
-using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class MeBotCommand(
-    ITelegramBotClient bot,
+    ITelegramBotClientWrapper bot,
     ICurrentUserService currentUserService)
 {
     public Task ProcessAsync(CancellationToken cancellationToken)

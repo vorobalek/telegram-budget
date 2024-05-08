@@ -10,4 +10,6 @@ public static class AppConfiguration
     public static readonly string DateTimeFormat = Environment.GetEnvironmentVariable("DATETIME_FORMAT").WithFallbackValue("hh:mm tt MM/dd/yyyy");
     public static readonly string Port = Environment.GetEnvironmentVariable("PORT")!;
     public static readonly string? DbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+    
+    internal const string RequestStartedOnContextItemName = "RequestStartedOn";
 }

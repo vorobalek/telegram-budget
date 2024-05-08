@@ -55,27 +55,16 @@ public class User :
         set => _ownedBudgets = value;
     }
 
-    public string? FirstName { get; set; }
+    public string FirstName { get; set; }
     public string? LastName { get; set; }
     public TimeSpan TimeZone { get; set; }
 
     // Telegram Id
     public long Id { get; set; }
 
-    private string GetFullName()
-    {
-        return (FirstName ?? Id.ToString()).EscapeHtml() +
-               (LastName is not null
-                   ? " " + LastName.EscapeHtml()
-                   : string.Empty);
-    }
-
     public string GetFullNameLink()
     {
-        return "<a href=\"tg://user?id=" +
-               $"{Id}\">" +
-               GetFullName() +
-               "</a>";
+        return TelegramHelper.GetFullNameLink(Id, FirstName, LastName);
     }
 
     public sealed class ChangeListener : EntityChangeListener<User>

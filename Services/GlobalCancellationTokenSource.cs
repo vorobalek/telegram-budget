@@ -9,5 +9,5 @@ public class GlobalCancellationTokenSource
         lifetime.ApplicationStopping.Register(_tokenSource.Cancel);
     }
 
-    public CancellationToken CancellationToken => _tokenSource.Token;
+    public CancellationToken Token => _tokenSource.Token;
 }

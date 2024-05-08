@@ -1,14 +1,14 @@
 using System.Text;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Configuration;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class CmdAllCallback(
-    ITelegramBotClient bot,
+    ITelegramBotClientWrapper bot,
     ICurrentUserService currentUserService)
 {
     public Task ProcessAsync(

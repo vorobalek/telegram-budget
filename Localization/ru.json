@@ -69,7 +69,8 @@
       "MENU_ACTIVE_BUDGET": "<b>{0} ➡\uFE0F {1}</b>",
       "MENU_GREETING": "\uD83D\uDC4B\uD83C\uDFFB <b>Привет, {0}</b>",
       "MENU_NO_TRANSACTIONS_TODAY": "<i>Сегодня у вас пока нет транзакций в этом бюджете.\nНачните добавлять транзакции: например, -100 за кофе</i>",
-      "MENU_TRANSACTIONS_TODAY": "<i>За сегодня</i>"
+      "MENU_TRANSACTIONS_TODAY": "<i>За сегодня</i>",
+      "NO_PAGE_CONTENT": "❌ <b>Нет страницы с номером {0}.</b>"
     }
   }
 }

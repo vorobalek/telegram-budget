@@ -11,6 +11,7 @@ using TelegramBudget.Services.TelegramApi;
 using TelegramBudget.Services.TelegramApi.Handlers;
 using TelegramBudget.Services.TelegramApi.NewHandlers;
 using TelegramBudget.Services.TelegramApi.PreHandler;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Extensions;
 
@@ -46,20 +47,9 @@ public static class TelegramExtensions
             .AddScoped<ITelegramApiService, TelegramApiService>();
     }
 
-    private static string GetFullName(this User user)
-    {
-        return $"{user.FirstName.EscapeHtml()}" +
-               $"{(user.LastName is not null
-                   ? " " + user.LastName.EscapeHtml()
-                   : string.Empty)}";
-    }
-
     public static string GetFullNameLink(this User user)
     {
-        return "<a href=\"tg://user?id=" +
-               $"{user.Id}\">" +
-               user.GetFullName() +
-               "</a>";
+        return TelegramHelper.GetFullNameLink(user.Id, user.FirstName, user.LastName);
     }
 
     private static IServiceCollection AddTelegramFlow(this IServiceCollection services)
@@ -279,20 +269,20 @@ public static class TelegramExtensions
                     TelegramFlow.New
                         .ForMessage(message => message
                             .ForText(text => text
-                                .WithInjection<ITelegramBotClient>()
+                                .WithInjection<ITelegramBotClientWrapper>()
                                 .WithAsyncProcessing((context, injected, token) =>
-                                    injected.SendChatActionAsync(context.Message.From!.Id, ChatAction.Typing,
+                                    injected.BotClient.SendChatActionAsync(context.Message.From!.Id, ChatAction.Typing,
                                         cancellationToken: token))))
                         .ForCallbackQuery(callbackQuery => callbackQuery
-                            .WithInjection<ITelegramBotClient>()
+                            .WithInjection<ITelegramBotClientWrapper>()
                             .WithAsyncProcessing((context, injected, token) =>
-                                injected.AnswerCallbackQueryAsync(context.CallbackQuery.Id, cancellationToken: token)))
+                                injected.BotClient.AnswerCallbackQueryAsync(context.CallbackQuery.Id, cancellationToken: token)))
                         .ForEditedMessage(message => message
                             .ForText(text => text
-                                .WithInjection<ITelegramBotClient>()
+                                .WithInjection<ITelegramBotClientWrapper>()
                                 .WithAsyncProcessing((context, injected, token) =>
-                                    injected.SendChatActionAsync(context.EditedMessage.From!.Id, ChatAction.Typing,
+                                    injected.BotClient.SendChatActionAsync(context.EditedMessage.From!.Id, ChatAction.Typing,
                                         cancellationToken: token))))
-                        .Build<ITelegramBotClient>(sp)));
+                        .Build<ITelegramBotClientWrapper>(sp)));
     }
 }

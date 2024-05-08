@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Configuration;
@@ -7,11 +6,12 @@ using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class TransactionPlainText(
-    ITelegramBotClient bot,
+    ITelegramBotClientWrapper bot,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {

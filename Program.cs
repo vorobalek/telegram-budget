@@ -6,8 +6,11 @@ using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Middleware;
+using TelegramBudget.Middleware.RequestTime;
 using TelegramBudget.Services;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.DateTimeProvider;
+using TelegramBudget.Services.TelegramBotClientWrapper;
 
 var host = Host
     .CreateDefaultBuilder(args)
@@ -64,9 +67,11 @@ var host = Host
 
             services.AddSingleton<GlobalCancellationTokenSource>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ITelegramBotClientWrapper, TelegramBotClientWrapper>();
             services.AddTelegramHandlers();
 
             services.AddHttpContextAccessor();
+            services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         });
 
         builder.ConfigureLogging(logging =>
@@ -82,6 +87,9 @@ var host = Host
 
         builder.Configure(app =>
         {
+#if DEBUG
+            app.UseRequestTimestamp();  
+#endif
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
             app.UseWhen(
