@@ -1,3 +1,5 @@
+#define DEBUG_RESPONSE_TIME
+
 global using LPlus;
 using Common.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
