@@ -79,6 +79,9 @@ public sealed class TransactionPlainText(
                             ? TR.L + newTransaction.CreatedAt + AppConfiguration.DateTimeFormat + " UTC"
                             : TR.L + newTransaction.CreatedAt.Add(user.TimeZone) + AppConfiguration.DateTimeFormat,
                         currentUserService.TelegramUser.GetFullNameLink()),
+                    replyToMessageId: participating.ParticipantId == currentUserService.TelegramUser.Id
+                        ? message.MessageId
+                        : null,
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
             await db.TransactionConfirmations.AddAsync(new TransactionConfirmation
