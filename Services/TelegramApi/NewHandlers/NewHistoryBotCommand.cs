@@ -119,7 +119,6 @@ public class NewHistoryBotCommand(
                 AuthorFirstName = e.Author.FirstName,
                 AuthorLastName = e.Author.LastName
             })
-            .OrderByDescending(e => e.CreatedAt)
             .ToArrayAsync(cancellationToken);
 
         var currentSum = 0m;
@@ -134,6 +133,7 @@ public class NewHistoryBotCommand(
                 currentSum += e.Amount;
                 return transaction;
             })
+            .OrderByDescending(e => e.CreatedAt)
             .ToArray();
     }
 
