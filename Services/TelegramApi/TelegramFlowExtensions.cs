@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Common.Infrastructure.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -7,10 +6,10 @@ using Telegram.Flow.Extensions;
 using Telegram.Flow.Updates;
 using Telegram.Flow.Updates.CallbackQueries.Data;
 using Telegram.Flow.Updates.Messages.Texts.BotCommands;
-using TelegramBudget.Controllers;
 using TelegramBudget.Services.TelegramApi.Handlers;
 using TelegramBudget.Services.TelegramApi.NewHandlers;
 using TelegramBudget.Services.TelegramApi.PreHandler;
+using TelegramBudget.Services.Trace;
 
 namespace TelegramBudget.Services.TelegramApi;
 
@@ -299,52 +298,46 @@ public static class TelegramFlowExtensions
                 .WatchServiceProvider(sp => TelegramFlow.New
                     .ForMessage(message => message
                         .ForText(text => text
-                            .WithInjection<ILogger<IUpdateHandler>>()
-                            .WithAsyncProcessing((context, logger, _) =>
+                            .WithInjection<ITraceService>()
+                            .WithAsyncProcessing((context, trace, _) =>
                             {
-                                logger.LogDebug("TXT {From} {Text}", context.Message.From!.Id, context.Text);
+                                trace.LogTrace($"MSG {context.Message.From!.Id} {context.Text}");
                                 return Task.CompletedTask;
                             }))
                     )
                     .ForEditedMessage(editedMessage => editedMessage
                         .ForText(text => text
-                            .WithInjection<ILogger<IUpdateHandler>>()
-                            .WithAsyncProcessing((context, logger, _) =>
+                            .WithInjection<ITraceService>()
+                            .WithAsyncProcessing((context, trace, _) =>
                             {
-                                logger.LogDebug("EDT {From} {Text}", context.EditedMessage.From!.Id, context.Text);
+                                trace.LogTrace($"EDT {context.EditedMessage.From!.Id} {context.Text}");
                                 return Task.CompletedTask;
                             })))
                     .ForCallbackQuery(callbackQuery => callbackQuery
                         .ForData(data => data
                             .ForPrefix("")
-                            .WithInjection<ILogger<IUpdateHandler>>()
-                            .WithAsyncProcessing((context, logger, _) =>
+                            .WithInjection<ITraceService>()
+                            .WithAsyncProcessing((context, trace, _) =>
                             {
-                                logger.LogDebug("CBQ {From} {Data}", context.CallbackQuery.From.Id, context.Data);
+                                trace.LogTrace($"CLB {context.CallbackQuery.From!.Id} {context.Data}");
                                 return Task.CompletedTask;
                             })))
                     .WithDisplayName("FullLogging")
-                    .Build<ILogger<IUpdateHandler>>(sp)));
+                    .Build<ITraceService>(sp)));
     }
 
     private static T WatchServiceProvider<T>(
         this IServiceProvider serviceProvider,
         Func<IServiceProvider, T> builder) where T : class
     {
-        var sw = Stopwatch.StartNew();
+        //var trace = serviceProvider.GetService<ITraceService>();
         var service = builder(serviceProvider);
-        sw.Stop();
-
-        serviceProvider
-            .GetService<ILogger<WebhookController>>()
-            ?.LogDebug(
-                "{DisplayName} created in {Milliseconds} milliseconds",
-                service switch
-                {
-                    IUpdateHandler updateHandler => updateHandler.DisplayName,
-                    _ => service.GetType().GetName()
-                },
-                sw.ElapsedMilliseconds);
+        var serviceTypeName = service switch
+        {
+            IUpdateHandler => nameof(IUpdateHandler),
+            _ => service.GetType().GetName()
+        };
+        //trace?.LogDebug($"{serviceTypeName} created");
 
         return service;
     }

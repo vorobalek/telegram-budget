@@ -4,7 +4,6 @@ namespace TelegramBudget.Configuration;
 
 public static class AppConfiguration
 {
-    internal const string RequestStartedOnContextItemName = "RequestStartedOn";
     private static readonly string Domain = Environment.GetEnvironmentVariable("DOMAIN")!;
     public static readonly string Url = $"https://{Domain}";
     public static readonly string Locale = Environment.GetEnvironmentVariable("LOCALE").WithFallbackValue("en");

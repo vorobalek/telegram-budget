@@ -1,4 +1,5 @@
 using TelegramBudget.Configuration;
+using TelegramBudget.Services.Trace;
 
 namespace TelegramBudget.Middleware;
 
@@ -6,21 +7,26 @@ public class SecretTokenValidatorMiddleware(RequestDelegate next)
 {
     private const string SecretTokenHeader = "X-Telegram-Bot-Api-Secret-Token";
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(
+        HttpContext context,
+        ITraceService trace)
     {
-        var secretToken = context.Request.Headers
-            .FirstOrDefault(x => x.Key == SecretTokenHeader)
-            .Value
-            .ToString();
-
-        if (string.IsNullOrWhiteSpace(secretToken) ||
-            TelegramBotConfiguration.WebhookSecretToken != secretToken)
+        using (trace.Create("secret_token_validation"))
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.CompleteAsync();
-            return;
-        }
+            var secretToken = context.Request.Headers
+                .FirstOrDefault(x => x.Key == SecretTokenHeader)
+                .Value
+                .ToString();
 
-        await next(context);
+            if (string.IsNullOrWhiteSpace(secretToken) ||
+                TelegramBotConfiguration.WebhookSecretToken != secretToken)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.CompleteAsync();
+                return;
+            }
+
+            await next(context);
+        }
     }
 }

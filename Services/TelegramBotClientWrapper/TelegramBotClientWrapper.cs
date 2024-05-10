@@ -5,12 +5,14 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBudget.Extensions;
+using TelegramBudget.Services.Trace;
 
 namespace TelegramBudget.Services.TelegramBotClientWrapper;
 
 public class TelegramBotClientWrapper(
     ITelegramBotClient botClient,
-    IHttpContextAccessor httpContextAccessor) : ITelegramBotClientWrapper
+    IHttpContextAccessor httpContextAccessor,
+    ITraceService trace) : ITelegramBotClientWrapper
 {
     public ITelegramBotClient BotClient => botClient;
 
@@ -21,12 +23,11 @@ public class TelegramBotClientWrapper(
         bool? protectContent = default, int? replyToMessageId = default, bool? allowSendingWithoutReply = default,
         IReplyMarkup? replyMarkup = default, CancellationToken cancellationToken = default)
     {
-        var time = httpContextAccessor.HttpContext?.TryGetRequestTimeMs();
         return botClient
             .SendTextMessageAsync(
                 chatId,
 #if DEBUG_RESPONSE_TIME
-                $"{text.Trim()}\n\n{time:F0} ms",
+                $"{text.Trim()}\n\n{trace.Milliseconds} ms",
 #else
                 text.Trim(),
 #endif
@@ -47,13 +48,12 @@ public class TelegramBotClientWrapper(
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default)
     {
-        var time = httpContextAccessor.HttpContext?.TryGetRequestTimeMs();
         return botClient
             .EditMessageTextAsync(
                 chatId,
                 messageId,
 #if DEBUG_RESPONSE_TIME
-                $"{text.Trim()}\n\n{time:F0} ms",
+                $"{text.Trim()}\n\n{trace.Milliseconds} ms",
 #else
                 text.Trim(),
 #endif

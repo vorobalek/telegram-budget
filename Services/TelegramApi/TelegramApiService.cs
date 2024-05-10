@@ -6,6 +6,7 @@ using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.TelegramApi.PreHandler;
+using TelegramBudget.Services.Trace;
 using User = TelegramBudget.Data.Entities.User;
 
 namespace TelegramBudget.Services.TelegramApi;
@@ -14,7 +15,8 @@ internal sealed class TelegramApiService(
     ICurrentUserService currentUserService,
     ApplicationDbContext db,
     IPreHandlerService preHandlerService,
-    IEnumerable<IUpdateHandler> handlers)
+    IEnumerable<IUpdateHandler> handlers,
+    ITraceService trace)
     : ITelegramApiService
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
