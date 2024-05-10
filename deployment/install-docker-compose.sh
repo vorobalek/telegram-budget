@@ -310,27 +310,18 @@ generate_docker_compose() {
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
   postgres-lan:
     driver: bridge" >> "./.tmp/$NOW/docker-compose.yml"
-
-  /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
-
+  
   /bin/echo -n "
+
 services:
   nginx:
-    depends_on:" >> "./.tmp/$NOW/docker-compose.yml"
-
-  REPLICA_NUMBER=1
-  while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
-    /bin/echo -n "
-    - \"backend$REPLICA_NUMBER\"" >> "./.tmp/$NOW/docker-compose.yml"
-    REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
-  done
-
-  /bin/echo -n "
+    depends_on:
+    - \"backend\"
     image: nginx:latest
     ports:
       - \"80:80\"
       - \"443:443\"
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./nginx/conf/:/etc/nginx/conf.d/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
@@ -353,7 +344,7 @@ services:
     image: postgres:latest
     ports:
       - \"5432\"
-    restart: always
+    restart: unless-stopped
     volumes:
       - postgresql_volume:/var/lib/postgresql/data
     env_file:
@@ -362,20 +353,26 @@ services:
     networks:
       - postgres-lan" >> "./.tmp/$NOW/docker-compose.yml" && /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
 
-  REPLICA_NUMBER=1
-  while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
-    /bin/echo -n "
-  backend$REPLICA_NUMBER:" >> "./.tmp/$NOW/docker-compose.yml"
+  /bin/echo -n "
+  backend:" >> "./.tmp/$NOW/docker-compose.yml"
 
-    [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+  [[ $SETUP_DB == 1 ]] && /bin/echo -n "
     depends_on:
       - \"postgres\""  >> "./.tmp/$NOW/docker-compose.yml"
 
-    /bin/echo -n "
+  /bin/echo -n "
     image: vorobalek/telegram-budget:latest
+    deploy:
+      mode: replicated
+      replicas: $NUMBER_OF_REPLICAS
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 30s
     ports:
       - \"80\"
-    restart: always
+    restart: unless-stopped
     env_file:
       - path: backend.env
         required: true
@@ -384,12 +381,10 @@ services:
     networks:
       - backend-lan"  >> "./.tmp/$NOW/docker-compose.yml"
 
-    [[ $SETUP_DB == 1 ]] && /bin/echo -n "
+  [[ $SETUP_DB == 1 ]] && /bin/echo -n "
       - postgres-lan"  >> "./.tmp/$NOW/docker-compose.yml"
 
-    /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
-    REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
-  done
+  /bin/echo >> "./.tmp/$NOW/docker-compose.yml"
 
   [[ $SETUP_DB == 1 ]] && /bin/echo -n "
 volumes:
@@ -433,19 +428,10 @@ update_nginx_configuration() {
 
   /bin/echo -n "
 
-upstream backends {" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
+upstream backends {
+  server backend:80;
+}
 
-  REPLICA_NUMBER=1
-  while [ "$REPLICA_NUMBER" -le $NUMBER_OF_REPLICAS ]; do
-    /bin/echo -n "
-  server backend$REPLICA_NUMBER:80;" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
-    REPLICA_NUMBER=$(( REPLICA_NUMBER + 1 ))
-  done
-
-  /bin/echo "
-}" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
-
-  /bin/echo -n "
 server {
   listen 443 ssl;
   listen [::]:443 ssl;
@@ -483,10 +469,10 @@ main() {
   generate_postgres_environment_file
   generate_docker_compose
   generate_nginx_configuration
-  generate_certificates
+  #generate_certificates
   update_nginx_configuration
   copy_installed
-  cleanup
+  #cleanup
 }
 
 main || exit
