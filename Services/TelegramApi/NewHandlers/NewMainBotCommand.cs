@@ -43,7 +43,7 @@ public class NewMainBotCommand(
         var menuTextBuilder = new StringBuilder();
         menuTextBuilder.AppendLine(
             string.Format(
-                TR.L + "MENU_GREETING",
+                TR.L + "MAIN_GREETING",
                 userUrl));
         menuTextBuilder.AppendLine();
 
@@ -58,7 +58,7 @@ public class NewMainBotCommand(
         
         menuTextBuilder.AppendLine(
             string.Format(
-                TR.L + "MENU_ACTIVE_BUDGET",
+                TR.L + "MAIN_ACTIVE_BUDGET",
                 budgetName,
                 $"{transactions.Sum(x => x.Amount):0.00}"));
         menuTextBuilder.AppendLine();
@@ -71,7 +71,7 @@ public class NewMainBotCommand(
         {
             menuTextBuilder.AppendLine(
                 string.Format(
-                    TR.L + "MENU_NO_TRANSACTIONS_TODAY",
+                    TR.L + "MAIN_NO_TRANSACTIONS_TODAY",
                     budgetName));
             return menuTextBuilder.ToString();
         }
@@ -83,8 +83,7 @@ public class NewMainBotCommand(
                     1,
                     (builder, _) =>
                     {
-                        builder.AppendLine(string.Format(TR.L + "MENU_TRANSACTIONS_TODAY", budgetName));
-                        builder.AppendLine();
+                        builder.AppendLine(string.Format(TR.L + "MAIN_TRANSACTIONS_TODAY", budgetName));
                     },
                     transaction => $"<b>{(transaction.Amount >= 0
                         ? $"➕ {transaction.Amount:0.00}"
