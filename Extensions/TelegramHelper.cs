@@ -2,7 +2,7 @@ namespace TelegramBudget.Extensions;
 
 public static class TelegramHelper
 {
-    private static string GetFullName(string firstName, string? lastName)
+    public static string GetFullName(string firstName, string? lastName)
     {
         return $"{firstName.EscapeHtml()}" +
                $"{(lastName is not null

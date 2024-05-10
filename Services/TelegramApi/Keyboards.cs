@@ -1,21 +1,64 @@
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBudget.Services.TelegramApi.NewHandlers;
 
 namespace TelegramBudget.Services.TelegramApi;
 
 public static class Keyboards
 {
+    public static readonly InlineKeyboardMarkup CmdAllInline =
+        new([[InlineKeyboardButton.WithCallbackData(TR.L + "START_COMMANDS", "cmd.all")]]);
+
+    public static readonly InlineKeyboardButton BackToMainInlineButtonOld =
+        InlineKeyboardButton.WithCallbackData(TR.L + "BACK", "main.old");
+
+    public static readonly InlineKeyboardMarkup BackToMainInlineOld =
+        new([[BackToMainInlineButtonOld]]);
+
+    public delegate string SelectItemCallbackDataProvider<in T>(T key);
     public delegate string PaginationButtonCallbackDataProvider(int currentPageNumber, int targetPageNumber);
 
-    public static readonly InlineKeyboardMarkup CmdAllInline =
-        new([[InlineKeyboardButton.WithCallbackData(TR.L + "BTN_START_COMMANDS", "cmd.all")]]);
+    public static readonly InlineKeyboardButton BackToMainInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMainHandler.Command);
 
-    public static readonly InlineKeyboardMarkup BackToMainInline =
-        new([[InlineKeyboardButton.WithCallbackData(TR.L + "BTN_MAIN", "main")]]);
+    private static readonly InlineKeyboardButton HistoryInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_HISTORY", NewHistoryHandler.Command);
 
-    public static readonly InlineKeyboardMarkup MenuInline =
-        new([[InlineKeyboardButton.WithCallbackData(TR.L + "BTN_HISTORY", "hst")]]);
+    public static readonly InlineKeyboardButton SwitchBudgetInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_SWITCH", NewSwitchHandler.Command);
 
-    public static InlineKeyboardMarkup GetPaginationInline(
+    public static readonly InlineKeyboardButton CreateBudgetInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", NewCreateHandler.Command);
+
+    private static readonly InlineKeyboardMarkup ActiveBudgetChosenMainInline =
+        new([[HistoryInlineButton,SwitchBudgetInlineButton]]);
+
+    private static readonly InlineKeyboardMarkup ActiveBudgetNotChosenMainInline =
+        new([[SwitchBudgetInlineButton]]);
+
+    public static InlineKeyboardMarkup BuildMainInline(bool hasActiveBudget)
+    {
+        return hasActiveBudget 
+            ? ActiveBudgetChosenMainInline 
+            : ActiveBudgetNotChosenMainInline;
+    }
+
+    public static IEnumerable<IEnumerable<InlineKeyboardButton>> BuildSelectItemInlineButtons<T>(
+        ICollection<(T Key, string Name)> availableBudgets,
+        SelectItemCallbackDataProvider<T> selectItemCallbackDataProvider)
+    {
+        var lines = new List<IEnumerable<InlineKeyboardButton>>();
+        foreach (var (key, name) in availableBudgets)
+        {
+            lines.Add([
+                InlineKeyboardButton.WithCallbackData(
+                    name,
+                    selectItemCallbackDataProvider(key))
+            ]);
+        }
+        return lines;
+    }
+
+    public static IEnumerable<IEnumerable<InlineKeyboardButton>> BuildPaginationInlineButtons(
         int currentPageNumber,
         int pageCount,
         PaginationButtonCallbackDataProvider backwardCallbackDataProvider,
@@ -26,7 +69,7 @@ public static class Keyboards
 
         if (stepLineLength is not null)
         {
-            var stepButtons = GetPaginationStepButtons(
+            var stepButtons = BuildPaginationStepInlineButtons(
                     currentPageNumber,
                     pageCount,
                     stepLineLength.Value,
@@ -38,7 +81,7 @@ public static class Keyboards
         }
         else
         {
-            var moveButtons = GetPaginationMoveButtons(
+            var moveButtons = BuildPaginationMoveInlineButtons(
                     currentPageNumber,
                     pageCount,
                     backwardCallbackDataProvider,
@@ -48,12 +91,10 @@ public static class Keyboards
                 lines.Add(moveButtons);
         }
 
-        lines.Add([InlineKeyboardButton.WithCallbackData(TR.L + "BTN_MAIN", "main")]);
-
-        return new InlineKeyboardMarkup(lines);
+        return lines;
     }
 
-    private static IEnumerable<InlineKeyboardButton> GetPaginationStepButtons(
+    private static IEnumerable<InlineKeyboardButton> BuildPaginationStepInlineButtons(
         int currentPageNumber,
         int pageCount,
         int stepLineLength,
@@ -80,7 +121,7 @@ public static class Keyboards
 
                 buttons.Add(
                     InlineKeyboardButton.WithCallbackData(
-                        string.Format(TR.L + "BTN_MOVE_BACK", i),
+                        string.Format(TR.L + "_BTN_MOVE_BACK", i),
                         backwardCallbackDataProvider(
                             currentPageNumber,
                             i)));
@@ -105,7 +146,7 @@ public static class Keyboards
 
                 buttons.Add(
                     InlineKeyboardButton.WithCallbackData(
-                        string.Format(TR.L + "BTN_MOVE_NEXT", i),
+                        string.Format(TR.L + "_BTN_MOVE_NEXT", i),
                         forwardCallbackDataProvider(
                             currentPageNumber,
                             i)));
@@ -115,7 +156,7 @@ public static class Keyboards
         return buttons;
     }
 
-    private static IEnumerable<InlineKeyboardButton> GetPaginationMoveButtons(
+    private static IEnumerable<InlineKeyboardButton> BuildPaginationMoveInlineButtons(
         int currentPageNumber,
         int pageCount,
         PaginationButtonCallbackDataProvider backwardCallbackDataProvider,
@@ -126,14 +167,14 @@ public static class Keyboards
         if (currentPageNumber > 1)
             buttons.Add(
                 InlineKeyboardButton.WithCallbackData(
-                    string.Format(TR.L + "BTN_MOVE_BACK", currentPageNumber - 1),
+                    string.Format(TR.L + "_BTN_MOVE_BACK", currentPageNumber - 1),
                     backwardCallbackDataProvider(
                         currentPageNumber,
                         currentPageNumber - 1)));
         if (currentPageNumber < pageCount)
             buttons.Add(
                 InlineKeyboardButton.WithCallbackData(
-                    string.Format(TR.L + "BTN_MOVE_NEXT", currentPageNumber + 1),
+                    string.Format(TR.L + "_BTN_MOVE_NEXT", currentPageNumber + 1),
                     forwardCallbackDataProvider(
                         currentPageNumber,
                         currentPageNumber + 1)));

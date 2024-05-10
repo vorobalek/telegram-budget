@@ -18,7 +18,7 @@ public sealed class CmdAllCallback(
         if (callbackQueryMessage is null) return Task.CompletedTask;
 
         var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine(TR.L + "HELP_INTRO");
+        stringBuilder.AppendLine(TR.L + "START_INTRO");
         stringBuilder.AppendLine();
 
         foreach (var command in TelegramBotConfiguration.Commands)
@@ -37,7 +37,7 @@ public sealed class CmdAllCallback(
             stringBuilder.AppendLine();
         }
 
-        stringBuilder.Append(TR.L + "HELP_OUTRO");
+        stringBuilder.Append(TR.L + "START_OUTRO");
 
         return botWrapper
             .EditMessageTextAsync(
@@ -46,7 +46,7 @@ public sealed class CmdAllCallback(
                 stringBuilder.ToString(),
                 ParseMode.Html,
                 disableWebPagePreview: true,
-                replyMarkup: Keyboards.BackToMainInline,
+                replyMarkup: Keyboards.BackToMainInlineOld,
                 cancellationToken: cancellationToken);
     }
 }

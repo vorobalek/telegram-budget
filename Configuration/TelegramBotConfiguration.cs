@@ -25,13 +25,8 @@ public static class TelegramBotConfiguration
     {
         new()
         {
-            Command = "/main",
-            Description = TR.L + "MAIN"
-        },
-        new()
-        {
-            Command = "/help",
-            Description = TR.L + "HELP"
+            Command = "/start",
+            Description = TR.L + "START"
         },
         new()
         {

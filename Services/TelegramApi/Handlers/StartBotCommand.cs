@@ -4,7 +4,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
-public sealed class HelpBotCommand(
+public sealed class StartBotCommand(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {

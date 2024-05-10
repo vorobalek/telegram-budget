@@ -10,30 +10,34 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.NewHandlers;
 
-public class NewHistoryBotCommand(
+public class NewHistoryHandler(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
-    ApplicationDbContext db)
+    ApplicationDbContext db) : ICallbackQueryHandler
 {
+    public const string Command = "history";
+    public const string CommandPrefix = "history.";
+
     public async Task ProcessAsync(
+        int messageId,
         string data,
-        int? callbackQueryMessageId,
         CancellationToken cancellationToken)
     {
-        if (!callbackQueryMessageId.HasValue) return;
-
-        var (budgetId, pageNumber) = ParseArguments(data);
+        var (budgetId, requestedPageNumber) = ParseArguments(data);
         var (activeBudgetId, timeZone) = await GetUserDataAsync(cancellationToken);
 
-        var reply = await PrepareReplyAsync(
+        var (text, budgetSlug, pageNumber, pageCount) = await PrepareReplyAsync(
             budgetId ?? activeBudgetId,
-            pageNumber,
+            requestedPageNumber,
             timeZone,
             cancellationToken);
 
         await SubmitReplyAsync(
-            callbackQueryMessageId.Value,
-            reply,
+            messageId,
+            text,
+            budgetSlug,
+            pageNumber,
+            pageCount,
             cancellationToken);
     }
 
@@ -71,11 +75,11 @@ public class NewHistoryBotCommand(
     {
         if (!budgetId.HasValue ||
             await GetBudgetNameAsync(budgetId.Value, cancellationToken) is not { } budgetName)
-            return (TR.L + "NO_BUDGET", null, 0, 0);
+            return (TR.L + "_HISTORY_NO_BUDGET", null, 0, 0);
 
         var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
         if (transactions.Count == 0)
-            return (string.Format(TR.L + "NO_TRANSACTIONS", budgetName.EscapeHtml()), null, 0, 0);
+            return (string.Format(TR.L + "_HISTORY_NO_TRANSACTIONS", budgetName.EscapeHtml()), null, 0, 0);
 
         var pageContent = BuildPageContent(
             pageNumber,
@@ -85,7 +89,7 @@ public class NewHistoryBotCommand(
             out var actualPageNumber,
             out var actualPageCount);
         if (string.IsNullOrWhiteSpace(pageContent))
-            return (string.Format(TR.L + "NO_PAGE_CONTENT", pageNumber), null, 0, 0);
+            return (string.Format(TR.L + "_HISTORY_NO_CONTENT", pageNumber), null, 0, 0);
 
         return (pageContent, $"{budgetId:N}", actualPageNumber, actualPageCount);
     }
@@ -104,7 +108,8 @@ public class NewHistoryBotCommand(
             decimal Amount,
             string? Comment,
             DateTime CreatedAt,
-            string AuthorUrl)>
+            long AuthorId,
+            string AuthorName)>
     > GetTransactionsReversedAsync(Guid budgetId, CancellationToken cancellationToken)
     {
         var data = await db.Transactions
@@ -129,7 +134,8 @@ public class NewHistoryBotCommand(
                     e.Amount,
                     e.Comment,
                     e.CreatedAt,
-                    TelegramHelper.GetFullNameLink(e.AuthorId, e.AuthorFirstName, e.AuthorLastName));
+                    e.AuthorId,
+                    TelegramHelper.GetFullName(e.AuthorFirstName, e.AuthorLastName));
                 currentSum += e.Amount;
                 return transaction;
             })
@@ -140,8 +146,13 @@ public class NewHistoryBotCommand(
     private static string? BuildPageContent(
         int requestedPageNumber,
         string budgetName,
-        IEnumerable<(decimal BeforeSum, decimal Amount, string? Comment, DateTime CreatedAt, string AuthorUrl)>
-            transactions,
+        IEnumerable<(
+                decimal BeforeSum, 
+                decimal Amount, 
+                string? Comment, 
+                DateTime CreatedAt,
+                long AuthorId,
+                string AuthorName)> transactions,
         TimeSpan timeZone,
         out int actualPageNumber,
         out int actualPageCount)
@@ -150,36 +161,40 @@ public class NewHistoryBotCommand(
             .CreatePage(
                 768,
                 requestedPageNumber,
-                (pageBuilder, pageNumber) =>
-                    pageBuilder.AppendLine(
-                        string.Format(TR.L + "HISTORY_INTRO", budgetName.EscapeHtml(), pageNumber)),
-                transaction =>
-                    $"{transaction.BeforeSum:0.00} " +
-                    $"<b>{(transaction.Amount >= 0
-                        ? $"➕ {transaction.Amount:0.00}"
-                        : $"➖ {Math.Abs(transaction.Amount):0.00}")}</b> " +
-                    $"➡️ {transaction.BeforeSum + transaction.Amount:0.00}" +
-                    (transaction.Comment is not null
-                        ? Environment.NewLine +
-                          Environment.NewLine +
-                          transaction.Comment.EscapeHtml()
-                        : string.Empty) +
-                    Environment.NewLine +
-                    Environment.NewLine +
-                    "<i>" +
+                (pageBuilder, pageNumber) => pageBuilder.Append(
                     string.Format(
-                        TR.L + "ADDED_NOTICE",
+                            TR.L + "_HISTORY_INTRO",
+                            budgetName.EscapeHtml(),
+                            pageNumber)
+                        .WithFallbackValue()),
+                transaction =>
+                {
+                    var diff = string.Format(
+                        TR.L + (
+                            transaction.Amount >= 0
+                                ? "_HISTORY_TRANSACTION_POSITIVE"
+                                : "_HISTORY_TRANSACTION_NEGATIVE"),
+                        transaction.BeforeSum,
+                        Math.Abs(transaction.Amount),
+                        transaction.BeforeSum + transaction.Amount);
+
+                    var comment = string.IsNullOrWhiteSpace(transaction.Comment)
+                        ? string.Empty
+                        : string.Format(
+                                TR.L + "_HISTORY_TRANSACTION_COMMENT",
+                                transaction.Comment?.EscapeHtml() ?? string.Empty);
+
+                    var author = string.Format(
+                        TR.L + "_HISTORY_TRANSACTION_ADDED_BY",
                         timeZone == TimeSpan.Zero
                             ? TR.L + transaction.CreatedAt + AppConfiguration.DateTimeFormat + " UTC"
                             : TR.L + transaction.CreatedAt.Add(timeZone) + AppConfiguration.DateTimeFormat,
-                        transaction.AuthorUrl) +
-                    "</i>",
-                (pageBuilder, currentString) =>
-                {
-                    pageBuilder.AppendLine();
-                    pageBuilder.AppendLine();
-                    pageBuilder.AppendLine(currentString);
+                        transaction.AuthorId,
+                        transaction.AuthorName);
+
+                    return $"{diff}{comment}{author}";
                 },
+                (pageBuilder, currentString) => pageBuilder.Append(currentString),
                 out actualPageNumber,
                 out actualPageCount);
 
@@ -188,19 +203,22 @@ public class NewHistoryBotCommand(
 
     private Task<Message> SubmitReplyAsync(
         int messageId,
-        (string Text, string? BudgetSlug, int PageNumber, int PageCount) reply,
+        string text,
+        string? budgetSlug,
+        int pageNumber,
+        int pageCount,
         CancellationToken cancellationToken)
     {
         var keyboard = GetKeyboard(
-            reply.BudgetSlug,
-            reply.PageNumber,
-            reply.PageCount);
+            budgetSlug,
+            pageNumber,
+            pageCount);
 
         return botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 messageId,
-                reply.Text,
+                text,
                 ParseMode.Html,
                 replyMarkup: keyboard,
                 cancellationToken: cancellationToken);
@@ -211,12 +229,14 @@ public class NewHistoryBotCommand(
         int actualPageNumber,
         int actualPageCount)
     {
-        return Keyboards.GetPaginationInline(
-            actualPageNumber,
-            actualPageCount,
-            (_, targetPageNumber) =>
-                $"hst.{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}",
-            (_, targetPageNumber) =>
-                $"hst.{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}");
+        return new InlineKeyboardMarkup(
+            Keyboards.BuildPaginationInlineButtons(
+                actualPageNumber,
+                actualPageCount,
+                (_, targetPageNumber) =>
+                    $"{CommandPrefix}{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}",
+                (_, targetPageNumber) =>
+                    $"{CommandPrefix}{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}")
+                .Concat([[Keyboards.BackToMainInlineButton]]));
     }
 }

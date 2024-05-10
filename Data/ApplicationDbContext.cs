@@ -8,21 +8,16 @@ using TelegramBudget.Services.CurrentUser;
 
 namespace TelegramBudget.Data;
 
-public partial class ApplicationDbContext : DbContext, ICommonDbContext<ApplicationDbContext>
+public partial class ApplicationDbContext(
+    IEntityChangeListenerService<ApplicationDbContext> entityChangeListenerService,
+    ICurrentUserService currentUserService,
+    DbContextOptions<ApplicationDbContext> options,
+    ILogger<ApplicationDbContext> logger) : 
+    DbContext(options),
+    ICommonDbContext<ApplicationDbContext>
 {
-    private readonly ICurrentUserService _currentUserService;
-
-    public ApplicationDbContext(
-        IEntityChangeListenerService<ApplicationDbContext> entityChangeListenerService,
-        ICurrentUserService currentUserService,
-        DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-        EntityChangeListenerService = entityChangeListenerService;
-        _currentUserService = currentUserService;
-        this.SubscribeCommonDbContext();
-    }
-
-    public IEntityChangeListenerService<ApplicationDbContext> EntityChangeListenerService { get; }
+    public IEntityChangeListenerService<ApplicationDbContext> EntityChangeListenerService =>
+        entityChangeListenerService;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -30,7 +25,13 @@ public partial class ApplicationDbContext : DbContext, ICommonDbContext<Applicat
         this.CommonConfiguring(optionsBuilder);
 #if DEBUG
         optionsBuilder.EnableSensitiveDataLogging();
-        optionsBuilder.LogTo(Console.WriteLine);
+        
+        void LogSensitive(string data)
+        {
+            logger.LogTrace("DB_SENSITIVE_LOG: {Data}", data);
+        }
+        
+        optionsBuilder.LogTo(LogSensitive);
 #endif
         optionsBuilder.ConfigureWarnings(builder => { builder.Ignore(CoreEventId.DetachedLazyLoadingWarning); });
     }
@@ -43,6 +44,6 @@ public partial class ApplicationDbContext : DbContext, ICommonDbContext<Applicat
         modelBuilder.Entity<Budget>().HasQueryFilter(e =>
             e.Participating
                 .Any(p =>
-                    p.ParticipantId == _currentUserService.TelegramUser.Id));
+                    p.ParticipantId == currentUserService.TelegramUser.Id));
     }
 }
