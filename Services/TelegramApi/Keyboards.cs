@@ -5,6 +5,10 @@ namespace TelegramBudget.Services.TelegramApi;
 
 public static class Keyboards
 {
+    public delegate string PaginationButtonCallbackDataProvider(int currentPageNumber, int targetPageNumber);
+
+    public delegate string SelectItemInlineButtonProvider<in T>(T key);
+
     public static readonly InlineKeyboardMarkup CmdAllInline =
         new([[InlineKeyboardButton.WithCallbackData(TR.L + "START_COMMANDS", "cmd.all")]]);
 
@@ -13,9 +17,6 @@ public static class Keyboards
 
     public static readonly InlineKeyboardMarkup BackToMainInlineOld =
         new([[BackToMainInlineButtonOld]]);
-
-    public delegate string SelectItemInlineButtonProvider<in T>(T key);
-    public delegate string PaginationButtonCallbackDataProvider(int currentPageNumber, int targetPageNumber);
 
     public static readonly InlineKeyboardButton BackToMainInlineButton =
         InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMainHandler.Command);
@@ -30,15 +31,15 @@ public static class Keyboards
         InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", NewCreateHandler.Command);
 
     private static readonly InlineKeyboardMarkup ActiveBudgetChosenMainInline =
-        new([[HistoryInlineButton,SwitchBudgetInlineButton]]);
+        new([[HistoryInlineButton, SwitchBudgetInlineButton]]);
 
     private static readonly InlineKeyboardMarkup ActiveBudgetNotChosenMainInline =
         new([[SwitchBudgetInlineButton]]);
 
     public static InlineKeyboardMarkup BuildMainInline(bool hasActiveBudget)
     {
-        return hasActiveBudget 
-            ? ActiveBudgetChosenMainInline 
+        return hasActiveBudget
+            ? ActiveBudgetChosenMainInline
             : ActiveBudgetNotChosenMainInline;
     }
 

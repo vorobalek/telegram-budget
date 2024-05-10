@@ -147,12 +147,12 @@ public class NewHistoryHandler(
         int requestedPageNumber,
         string budgetName,
         IEnumerable<(
-                decimal BeforeSum, 
-                decimal Amount, 
-                string? Comment, 
-                DateTime CreatedAt,
-                long AuthorId,
-                string AuthorName)> transactions,
+            decimal BeforeSum,
+            decimal Amount,
+            string? Comment,
+            DateTime CreatedAt,
+            long AuthorId,
+            string AuthorName)> transactions,
         TimeSpan timeZone,
         out int actualPageNumber,
         out int actualPageCount)
@@ -181,8 +181,8 @@ public class NewHistoryHandler(
                     var comment = string.IsNullOrWhiteSpace(transaction.Comment)
                         ? string.Empty
                         : string.Format(
-                                TR.L + "_HISTORY_TRANSACTION_COMMENT",
-                                transaction.Comment?.EscapeHtml() ?? string.Empty);
+                            TR.L + "_HISTORY_TRANSACTION_COMMENT",
+                            transaction.Comment?.EscapeHtml() ?? string.Empty);
 
                     var author = string.Format(
                         TR.L + "_HISTORY_TRANSACTION_ADDED_BY",
@@ -231,12 +231,12 @@ public class NewHistoryHandler(
     {
         return new InlineKeyboardMarkup(
             Keyboards.BuildPaginationInlineButtons(
-                actualPageNumber,
-                actualPageCount,
-                (_, targetPageNumber) =>
-                    $"{CommandPrefix}{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}",
-                (_, targetPageNumber) =>
-                    $"{CommandPrefix}{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}")
+                    actualPageNumber,
+                    actualPageCount,
+                    (_, targetPageNumber) =>
+                        $"{CommandPrefix}{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}",
+                    (_, targetPageNumber) =>
+                        $"{CommandPrefix}{budgetSlug ?? throw new ArgumentNullException(nameof(budgetSlug))}.{targetPageNumber}")
                 .Concat([[Keyboards.BackToMainInlineButton]]));
     }
 }

@@ -334,7 +334,7 @@ public static class TelegramFlowExtensions
         var sw = Stopwatch.StartNew();
         var service = builder(serviceProvider);
         sw.Stop();
-                
+
         serviceProvider
             .GetService<ILogger<WebhookController>>()
             ?.LogDebug(

@@ -47,7 +47,7 @@ public class NewSwitchHandler(
     }
 
     private async Task<(
-        string Text, 
+        string Text,
         ICollection<(Guid Id, string Name, decimal Sum)>? AvailableBudgets)
     > PrepareReplyAsync(Guid? budgetId, CancellationToken cancellationToken)
     {
@@ -58,26 +58,27 @@ public class NewSwitchHandler(
             await TrySetActiveBudgetAsync(user, budgetId.Value, cancellationToken))
         {
             var activeBudgetText = string.Format(TR.L + "_SWITCH_ACTIVE_BUDGET", budgetName);
-            
+
             var ownerInfo = await GetBudgetOwnerInfoAsync(budgetId.Value, cancellationToken);
             var ownerText = ownerInfo.Id switch
             {
-                not null when ownerInfo.Id == user.Id => 
+                not null when ownerInfo.Id == user.Id =>
                     TR.L + "_OWNER_YOU",
-                not null when ownerInfo.Name is not null => 
+                not null when ownerInfo.Name is not null =>
                     string.Format(TR.L + "_OWNER_USER", ownerInfo.Id, ownerInfo.Name),
-                _ => 
+                _ =>
                     TR.L + "_OWNER_UNKNOWN"
             };
-            
+
             return ($"{activeBudgetText}{ownerText}", null);
         }
-        
+
         var availableBudgets = await GetAvailableBudgetsAsync(user.ActiveBudgetId, cancellationToken);
         return (TR.L + "_SWITCH_CHOOSE_BUDGET", availableBudgets);
     }
 
-    private async Task<(long? Id, string? Name)> GetBudgetOwnerInfoAsync(Guid budgetId, CancellationToken cancellationToken)
+    private async Task<(long? Id, string? Name)> GetBudgetOwnerInfoAsync(Guid budgetId,
+        CancellationToken cancellationToken)
     {
         var data = await db.Budgets
             .Where(e => e.Id == budgetId)
@@ -107,7 +108,8 @@ public class NewSwitchHandler(
 
     private async Task<bool> TrySetActiveBudgetAsync(User user, Guid budgetId, CancellationToken cancellationToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
+        await using var transaction = await db.Database
+            .BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
         try
         {
             user.ActiveBudgetId = budgetId;
@@ -170,7 +172,7 @@ public class NewSwitchHandler(
                     .Concat(
                         Keyboards.BuildSelectItemInlineButtons(
                             availableBudgets,
-                            item => 
+                            item =>
                                 string.Format(
                                     TR.L + "_SWITCH_CHOOSE_BUDGET_BTN",
                                     item.Name.Truncate(32),

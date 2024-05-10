@@ -70,7 +70,7 @@ public class NewMainHandler(
         }
 
         var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
-        
+
         menuTextBuilder.Append(
             string.Format(
                 TR.L + "_MAIN_ACTIVE_BUDGET",
@@ -86,23 +86,20 @@ public class NewMainHandler(
             menuTextBuilder.Append(TR.L + "_MAIN_NO_TRANSACTIONS");
             return menuTextBuilder.ToString();
         }
-        
+
         menuTextBuilder.Append(
             todayTransactions
                 .CreatePage(
                     1024,
                     1,
-                    (builder, _) =>
-                    {
-                        builder.Append(string.Format(TR.L + "_MAIN_TRANSACTION_INTRO", budgetName));
-                    },
-                    transaction => 
+                    (builder, _) => { builder.Append(string.Format(TR.L + "_MAIN_TRANSACTION_INTRO", budgetName)); },
+                    transaction =>
                         string.Format(
                             TR.L + (
                                 transaction.Amount >= 0
-                                ? "_MAIN_TRANSACTION_POSITIVE"
-                                : "_MAIN_TRANSACTION_NEGATIVE"),
-                            Math.Abs(transaction.Amount)) + 
+                                    ? "_MAIN_TRANSACTION_POSITIVE"
+                                    : "_MAIN_TRANSACTION_NEGATIVE"),
+                            Math.Abs(transaction.Amount)) +
                         string.Format(
                             TR.L + "_MAIN_TRANSACTION_COMMENT",
                             transaction.Comment?.EscapeHtml() ?? string.Empty),
