@@ -48,7 +48,7 @@ public class NewSwitchHandler(
 
     private async Task<(
         string Text, 
-        ICollection<(Guid Id, string Name)>? AvailableBudgets)
+        ICollection<(Guid Id, string Name, decimal Sum)>? AvailableBudgets)
     > PrepareReplyAsync(Guid? budgetId, CancellationToken cancellationToken)
     {
         var user = await GetUserAsync(cancellationToken);
@@ -126,7 +126,7 @@ public class NewSwitchHandler(
         return false;
     }
 
-    private async Task<ICollection<(Guid Id, string Name)>> GetAvailableBudgetsAsync(
+    private async Task<ICollection<(Guid Id, string Name, decimal Sum)>> GetAvailableBudgetsAsync(
         Guid? activeBudgetId,
         CancellationToken cancellationToken)
     {
@@ -135,17 +135,18 @@ public class NewSwitchHandler(
             .Select(e => new
             {
                 e.Id,
-                e.Name
+                e.Name,
+                Sum = e.Transactions.Select(transaction => transaction.Amount).Sum()
             })
             .ToArrayAsync(cancellationToken);
 
-        return data.Select(e => (e.Id, e.Name)).ToArray();
+        return data.Select(e => (e.Id, e.Name, e.Sum)).ToArray();
     }
 
     private Task<Message> SubmitReplyAsync(
         int messageId,
         string text,
-        ICollection<(Guid Id, string Name)>? availableBudgets,
+        ICollection<(Guid Id, string Name, decimal Sum)>? availableBudgets,
         CancellationToken cancellationToken)
     {
         var keyboard = GetKeyboard(availableBudgets);
@@ -160,7 +161,7 @@ public class NewSwitchHandler(
                 cancellationToken: cancellationToken);
     }
 
-    private static InlineKeyboardMarkup GetKeyboard(ICollection<(Guid Id, string Name)>? availableBudgets)
+    private static InlineKeyboardMarkup GetKeyboard(ICollection<(Guid Id, string Name, decimal Sum)>? availableBudgets)
     {
         return new InlineKeyboardMarkup(
             availableBudgets != null
@@ -169,7 +170,12 @@ public class NewSwitchHandler(
                     .Concat(
                         Keyboards.BuildSelectItemInlineButtons(
                             availableBudgets,
-                            key => $"{CommandPrefix}{key:N}"))
+                            item => 
+                                string.Format(
+                                    TR.L + "_SWITCH_CHOOSE_BUDGET_BTN",
+                                    item.Name.Truncate(32),
+                                    item.Sum),
+                            item => $"{CommandPrefix}{item.Id:N}"))
                     .Concat(
                         [[Keyboards.BackToMainInlineButton]])
                 : [[Keyboards.BackToMainInlineButton]]);

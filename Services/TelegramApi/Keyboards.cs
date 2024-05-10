@@ -14,7 +14,7 @@ public static class Keyboards
     public static readonly InlineKeyboardMarkup BackToMainInlineOld =
         new([[BackToMainInlineButtonOld]]);
 
-    public delegate string SelectItemCallbackDataProvider<in T>(T key);
+    public delegate string SelectItemInlineButtonProvider<in T>(T key);
     public delegate string PaginationButtonCallbackDataProvider(int currentPageNumber, int targetPageNumber);
 
     public static readonly InlineKeyboardButton BackToMainInlineButton =
@@ -43,19 +43,20 @@ public static class Keyboards
     }
 
     public static IEnumerable<IEnumerable<InlineKeyboardButton>> BuildSelectItemInlineButtons<T>(
-        ICollection<(T Key, string Name)> availableBudgets,
-        SelectItemCallbackDataProvider<T> selectItemCallbackDataProvider)
+        ICollection<T> availableBudgets,
+        SelectItemInlineButtonProvider<T> textInlineButtonProvider,
+        SelectItemInlineButtonProvider<T> dataInlineButtonProvider)
     {
-        var lines = new List<IEnumerable<InlineKeyboardButton>>();
-        foreach (var (key, name) in availableBudgets)
-        {
-            lines.Add([
-                InlineKeyboardButton.WithCallbackData(
-                    name,
-                    selectItemCallbackDataProvider(key))
-            ]);
-        }
-        return lines;
+        return availableBudgets
+            .Select(item =>
+                (IEnumerable<InlineKeyboardButton>)
+                [
+                    InlineKeyboardButton
+                        .WithCallbackData(
+                            textInlineButtonProvider(item),
+                            dataInlineButtonProvider(item))
+                ])
+            .ToList();
     }
 
     public static IEnumerable<IEnumerable<InlineKeyboardButton>> BuildPaginationInlineButtons(

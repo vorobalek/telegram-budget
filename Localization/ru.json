@@ -18,6 +18,7 @@
       "_HISTORY_TRANSACTION_ADDED_BY": "\n<i>добавлено {0} <a href=\"tg://user?id={1}\">{2}</a></i>",
 
       "_SWITCH_CHOOSE_BUDGET": "\uD83D\uDD0D <b>Переключитесь на один из доступных Вам бюджетов или создать новый.</b>",
+      "_SWITCH_CHOOSE_BUDGET_BTN": "{0} ➡\uFE0F {1:0.00}",
       "_SWITCH_ACTIVE_BUDGET": "✅ <b>Вашим активным бюджетом выбран &quot;{0}&quot;</b>",
       "_OWNER_UNKNOWN": " <i>(владелец неизвестен)</i>",
       "_OWNER_YOU": " <i>(владелец – Вы)</i>",
