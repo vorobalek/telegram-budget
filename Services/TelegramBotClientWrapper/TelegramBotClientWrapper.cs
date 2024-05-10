@@ -26,9 +26,9 @@ public class TelegramBotClientWrapper(
             .SendTextMessageAsync(
                 chatId,
 #if DEBUG_RESPONSE_TIME
-                $"{text}\n\n{time:F0} ms",
+                $"{text.Trim()}\n\n{time:F0} ms",
 #else
-                text,
+                text.Trim(),
 #endif
                 messageThreadId,
                 parseMode,
@@ -53,9 +53,9 @@ public class TelegramBotClientWrapper(
                 chatId,
                 messageId,
 #if DEBUG_RESPONSE_TIME
-                $"{text}\n\n{time:F0} ms",
+                $"{text.Trim()}\n\n{time:F0} ms",
 #else
-                text,
+                text.Trim(),
 #endif
                 parseMode,
                 entities,
