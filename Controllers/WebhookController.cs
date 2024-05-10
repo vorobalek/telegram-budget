@@ -8,7 +8,7 @@ using TelegramBudget.Services.TelegramApi;
 namespace TelegramBudget.Controllers;
 
 public class WebhookController(
-    ITelegramApiService telegramApiService, 
+    ITelegramApiService telegramApiService,
     ICurrentUserService currentUserService,
     GlobalCancellationTokenSource cancellationTokenSource) : ControllerBase
 {

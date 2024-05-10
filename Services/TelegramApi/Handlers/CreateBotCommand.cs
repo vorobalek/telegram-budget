@@ -9,7 +9,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class CreateBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -42,20 +42,20 @@ public sealed class CreateBotCommand(
 
         await db.SaveChangesAsync(cancellationToken);
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "CREATED", budgetName.EscapeHtml()),
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }
-    
+
     private async Task<string?> ExtractBudgetNameAsync(string data, CancellationToken cancellationToken)
     {
         var budgetName = data.Trim().Truncate(250);
         if (!string.IsNullOrWhiteSpace(budgetName)) return budgetName;
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 TR.L + "CREATE_EXAMPLE",
@@ -69,7 +69,7 @@ public sealed class CreateBotCommand(
         var budgetAlreadyExists = await db.Budgets.AnyAsync(e => e.Name == budgetName, cancellationToken);
         if (!budgetAlreadyExists) return false;
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "ALREADY_EXISTS", budgetName.EscapeHtml()),

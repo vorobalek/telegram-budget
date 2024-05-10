@@ -11,7 +11,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class HistoryBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -24,7 +24,7 @@ public sealed class HistoryBotCommand(
 
         if (!budget.Transactions.Any())
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "NO_TRANSACTIONS", budget.Name.EscapeHtml()),
@@ -67,14 +67,14 @@ public sealed class HistoryBotCommand(
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine(currentString);
             }, async (pageContent, token) =>
-                await bot
+                await botWrapper
                     .SendTextMessageAsync(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
                         cancellationToken: token), cancellationToken);
     }
-    
+
     private async Task<Budget?> ExtractBudgetAsync(string budgetName, User user, CancellationToken cancellationToken)
     {
         var errorMessageBuilder = new StringBuilder();
@@ -88,7 +88,7 @@ public sealed class HistoryBotCommand(
             errorMessageBuilder.AppendLine();
             errorMessageBuilder.AppendLine(TR.L + "HISTORY_EXAMPLE");
 
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
@@ -107,7 +107,7 @@ public sealed class HistoryBotCommand(
             errorMessageBuilder.AppendLine();
             errorMessageBuilder.AppendLine(TR.L + "HISTORY_EXAMPLE");
 
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
@@ -138,7 +138,7 @@ public sealed class HistoryBotCommand(
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
-                    await bot
+                    await botWrapper
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,

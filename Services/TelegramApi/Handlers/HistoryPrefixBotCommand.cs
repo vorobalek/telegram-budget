@@ -9,7 +9,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class HistoryPrefixBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -24,7 +24,7 @@ public sealed class HistoryPrefixBotCommand(
 
         if (!budget.Transactions.Any())
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "NO_TRANSACTIONS", budget.Name.EscapeHtml()),
@@ -67,7 +67,7 @@ public sealed class HistoryPrefixBotCommand(
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine(currentString);
             }, async (pageContent, token) =>
-                await bot
+                await botWrapper
                     .SendTextMessageAsync(
                         currentUserService.TelegramUser.Id,
                         pageContent,

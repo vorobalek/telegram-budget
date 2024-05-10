@@ -10,9 +10,9 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class DeleteBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
-    ApplicationDbContext db) 
+    ApplicationDbContext db)
 {
     public async Task ProcessAsync(string data, CancellationToken cancellationToken)
     {
@@ -22,7 +22,7 @@ public sealed class DeleteBotCommand(
 
         if (budget.CreatedBy != currentUserService.TelegramUser.Id)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "DELETION_RESTRICTED", budget.Name.EscapeHtml()),
@@ -40,7 +40,7 @@ public sealed class DeleteBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var participant in participants)
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     participant.ParticipantId,
                     string.Format(TR.L + "DELETED", budget.Name.EscapeHtml(),
@@ -48,7 +48,7 @@ public sealed class DeleteBotCommand(
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
     }
-    
+
     private async Task<Budget?> ExtractBudgetAsync(string budgetName, User user, CancellationToken cancellationToken)
     {
         var errorMessageBuilder = new StringBuilder();
@@ -64,7 +64,7 @@ public sealed class DeleteBotCommand(
             errorMessageBuilder.AppendLine();
             errorMessageBuilder.AppendLine(TR.L + "DELETE_EXAMPLE");
 
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
@@ -83,7 +83,7 @@ public sealed class DeleteBotCommand(
             errorMessageBuilder.AppendLine();
             errorMessageBuilder.AppendLine(TR.L + "DELETE_EXAMPLE");
 
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
@@ -114,7 +114,7 @@ public sealed class DeleteBotCommand(
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
-                    await bot
+                    await botWrapper
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,

@@ -8,7 +8,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class RevokePrefixBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -20,7 +20,7 @@ public sealed class RevokePrefixBotCommand(
             !long.TryParse(args[0], out var userToShareId) ||
             !Guid.TryParse(args[1], out var budgetId))
             return;
-        
+
         if (await db
                 .Budgets
                 .FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budgetToUnShare)
@@ -37,7 +37,7 @@ public sealed class RevokePrefixBotCommand(
                         e.BudgetId == budgetToUnShare.Id,
                     cancellationToken) is not { } participant)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_REVOKED", userToUnShare.GetFullNameLink(),
@@ -49,7 +49,7 @@ public sealed class RevokePrefixBotCommand(
 
         if (budgetToUnShare.CreatedBy == userToUnShare.Id)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "REVOKING_RESTRICTED", userToUnShare.GetFullNameLink(),
@@ -76,7 +76,7 @@ public sealed class RevokePrefixBotCommand(
             .ToListAsync(cancellationToken);
 
         foreach (var participantId in participantIds)
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     participantId,
                     string.Format(TR.L + "REVOKED_FOR_USER", budgetToUnShare.Name.EscapeHtml(),
@@ -84,7 +84,7 @@ public sealed class RevokePrefixBotCommand(
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 userToUnShare.Id,
                 string.Format(TR.L + "REVOKED_FOR_YOU", budgetToUnShare.Name.EscapeHtml(),

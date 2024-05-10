@@ -12,7 +12,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class TimezoneBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db,
     IDateTimeProvider dateTime)
@@ -37,7 +37,7 @@ public sealed class TimezoneBotCommand(
             responseMessageBuilder.AppendLine();
             responseMessageBuilder.AppendLine(TR.L + "TIMEZONE_EXAMPLE");
 
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     responseMessageBuilder.ToString(),
@@ -61,7 +61,7 @@ public sealed class TimezoneBotCommand(
                 TR.L + "TIME_CURRENT",
                 TR.L + dateTime.UtcNow().DateTime.Add(user.TimeZone) + AppConfiguration.DateTimeFormat));
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 responseMessageBuilder.ToString(),
@@ -81,16 +81,22 @@ public sealed class TimezoneBotCommand(
             return TimeSpan.TryParseExact(
                 data,
                 @"\-h\:mm",
-                CultureInfo.InvariantCulture, out var negativeTimeZone) ? -negativeTimeZone : null;
+                CultureInfo.InvariantCulture, out var negativeTimeZone)
+                ? -negativeTimeZone
+                : null;
         if (data.StartsWith('+'))
             return TimeSpan.TryParseExact(
                 data,
                 @"\+h\:mm",
-                CultureInfo.InvariantCulture, out var positiveTimeZone) ? +positiveTimeZone : null;
-        
+                CultureInfo.InvariantCulture, out var positiveTimeZone)
+                ? +positiveTimeZone
+                : null;
+
         return TimeSpan.TryParseExact(
             data,
             @"h\:mm",
-            CultureInfo.InvariantCulture, out var timeZone) ? timeZone : null;
+            CultureInfo.InvariantCulture, out var timeZone)
+            ? timeZone
+            : null;
     }
 }

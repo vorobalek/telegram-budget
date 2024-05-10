@@ -5,12 +5,12 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class MeBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
     public Task ProcessAsync(CancellationToken cancellationToken)
     {
-        return bot
+        return botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 $"<code>{currentUserService.TelegramUser.Id}</code>",

@@ -8,7 +8,7 @@ namespace TelegramBudget.Services.TelegramBotClientWrapper;
 public interface ITelegramBotClientWrapper
 {
     ITelegramBotClient BotClient { get; }
-    
+
     Task<Message> SendTextMessageAsync(
         ChatId chatId,
         string text,

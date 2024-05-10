@@ -4,13 +4,13 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
-public sealed class StartBotCommand(
-    ITelegramBotClientWrapper bot,
+public sealed class HelpBotCommand(
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
     public Task ProcessAsync(CancellationToken cancellationToken)
     {
-        return bot
+        return botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 TR.L + "START_GREETING",

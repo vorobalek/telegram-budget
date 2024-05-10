@@ -56,62 +56,51 @@ public static class TelegramExtensions
     {
         return services
             .AddPreHandler()
-
-            .AddBotCommand<StartBotCommand>(
+            .AddBotCommand<HelpBotCommand>(
                 (handler, _, token) => handler.ProcessAsync(token),
-                "start", "help")
-            
+                "help")
             .AddBotCommand<ListBotCommand>(
                 (handler, _, token) => handler.ProcessAsync(token),
                 "list")
-            
             .AddBotCommand<MeBotCommand>(
                 (handler, _, token) => handler.ProcessAsync(token),
                 "me")
-            
             .AddBotCommand<HistoryBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "history")
             .AddBotCommandPrefix<HistoryPrefixBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "history_")
-            
             .AddBotCommand<CreateBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "create")
-            
             .AddBotCommand<SwitchBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "switch")
             .AddBotCommandPrefix<SwitchPrefixBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "switch_")
-            
             .AddBotCommand<TimezoneBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "timezone")
-            
             .AddBotCommand<GrantBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "grant")
             .AddBotCommandPrefix<GrantPrefixBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "grant_")
-            
             .AddBotCommand<RevokeBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "revoke")
             .AddBotCommandPrefix<RevokePrefixBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "revoke_")
-            
             .AddBotCommand<DeleteBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "delete")
             .AddBotCommandPrefix<DeletePrefixBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(context.Data, token),
                 "delete_")
-            
             .AddScoped<TransactionPlainText>()
             .AddScoped<IUpdateHandler>(sp => TelegramFlow.New
                 .ForMessage(message => message
@@ -121,7 +110,6 @@ public static class TelegramExtensions
                             injected.ProcessAsync(context.Message, context.Text, token))))
                 .WithDisplayName(nameof(TransactionPlainText))
                 .Build<TransactionPlainText>(sp))
-            
             .AddScoped<TransactionEditedPlainText>()
             .AddScoped<IUpdateHandler>(sp => TelegramFlow.New
                 .ForEditedMessage(message => message
@@ -131,27 +119,32 @@ public static class TelegramExtensions
                             injected.ProcessAsync(context.EditedMessage, context.Text, token))))
                 .WithDisplayName(nameof(TransactionEditedPlainText))
                 .Build<TransactionEditedPlainText>(sp))
-            
             .AddCallbackData<CmdAllCallback>(
                 (handler, context, token) => handler.ProcessAsync(context.CallbackQuery.Message, token),
                 "cmd.all")
             
             .AddBotCommand<NewMainBotCommand>(
-                (handler, _, token) => handler.ProcessAsync(token),
+                (handler, _, token) => handler.ProcessAsync(
+                    null,
+                    token),
                 "main")
-            
             .AddCallbackData<NewMainBotCommand>(
                 (handler, context, token) => handler.ProcessAsync(
-                    token, 
-                    context.CallbackQuery.Message!.MessageId),
+                    context.CallbackQuery.Message?.MessageId,
+                    token),
                 "main")
             
             .AddCallbackData<NewHistoryBotCommand>(
-                (handler, context, token) => handler.ProcessAsync(context.Data, context.CallbackQuery.Message, token),
+                (handler, context, token) => handler.ProcessAsync(
+                    context.Data, 
+                    context.CallbackQuery.Message?.MessageId, 
+                    token),
                 "hst")
-            
             .AddCallbackDataPrefix<NewHistoryBotCommand>(
-                (handler, context, token) => handler.ProcessAsync(context.Data, context.CallbackQuery.Message, token),
+                (handler, context, token) => handler.ProcessAsync(
+                    context.Data, 
+                    context.CallbackQuery.Message?.MessageId,
+                    token),
                 "hst.");
     }
 
@@ -276,12 +269,14 @@ public static class TelegramExtensions
                         .ForCallbackQuery(callbackQuery => callbackQuery
                             .WithInjection<ITelegramBotClientWrapper>()
                             .WithAsyncProcessing((context, injected, token) =>
-                                injected.BotClient.AnswerCallbackQueryAsync(context.CallbackQuery.Id, cancellationToken: token)))
+                                injected.BotClient.AnswerCallbackQueryAsync(context.CallbackQuery.Id,
+                                    cancellationToken: token)))
                         .ForEditedMessage(message => message
                             .ForText(text => text
                                 .WithInjection<ITelegramBotClientWrapper>()
                                 .WithAsyncProcessing((context, injected, token) =>
-                                    injected.BotClient.SendChatActionAsync(context.EditedMessage.From!.Id, ChatAction.Typing,
+                                    injected.BotClient.SendChatActionAsync(context.EditedMessage.From!.Id,
+                                        ChatAction.Typing,
                                         cancellationToken: token))))
                         .Build<ITelegramBotClientWrapper>(sp)));
     }

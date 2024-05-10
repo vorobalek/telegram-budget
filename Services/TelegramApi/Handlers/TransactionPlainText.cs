@@ -11,24 +11,24 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class TransactionPlainText(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
     public async Task ProcessAsync(
-        Message message, 
+        Message message,
         string text,
         CancellationToken cancellationToken)
     {
         var rawAmount = text.Split()[0];
         if (!decimal.TryParse(rawAmount, out var amount))
             return;
-        
+
         var user = await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
 
         if (user.ActiveBudget is null)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_ACTIVE_BUDGET",
@@ -57,7 +57,7 @@ public sealed class TransactionPlainText(
         var needSaveChange = false;
         foreach (var participating in user.ActiveBudget.Participating)
         {
-            var confirmationMessage = await bot
+            var confirmationMessage = await botWrapper
                 .SendTextMessageAsync(
                     participating.ParticipantId,
                     $"💰 <b>{user.ActiveBudget.Name.EscapeHtml()}</b> 💰" +

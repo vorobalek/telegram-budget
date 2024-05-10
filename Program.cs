@@ -90,7 +90,7 @@ var host = Host
         builder.Configure(app =>
         {
 #if DEBUG_RESPONSE_TIME
-            app.UseRequestTimestamp();  
+            app.UseRequestTimestamp();
 #endif
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");

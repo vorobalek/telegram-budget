@@ -9,7 +9,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class GrantBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -26,7 +26,7 @@ public sealed class GrantBotCommand(
                         e.BudgetId == args.BudgetToShare.Id,
                     cancellationToken))
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_GRANTED", args.UserToShare.GetFullNameLink(),
@@ -58,7 +58,7 @@ public sealed class GrantBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var participantId in participantIds)
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     participantId,
                     string.Format(TR.L + "GRANTED_TO_USER", args.BudgetToShare.Name.EscapeHtml(),
@@ -66,7 +66,7 @@ public sealed class GrantBotCommand(
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 args.UserToShare.Id,
                 string.Format(TR.L + "GRANTED_TO_YOU", args.BudgetToShare.Name.EscapeHtml(),
@@ -74,7 +74,7 @@ public sealed class GrantBotCommand(
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }
-    
+
     private async Task<(User UserToShare, Budget BudgetToShare)?> ExtractArgumentsAsync(string data, User user,
         CancellationToken cancellationToken)
     {
@@ -82,7 +82,7 @@ public sealed class GrantBotCommand(
 
         if (string.IsNullOrWhiteSpace(userToShareIdString))
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     TR.L + "GRANT_EXAMPLE",
@@ -93,7 +93,7 @@ public sealed class GrantBotCommand(
 
         if (!long.TryParse(userToShareIdString, out var userToShareId))
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "INVALID_USER_ID", userToShareIdString.EscapeHtml()),
@@ -104,7 +104,7 @@ public sealed class GrantBotCommand(
 
         if (await db.Users.FirstOrDefaultAsync(e => e.Id == userToShareId, cancellationToken) is not { } userToShare)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "USER_NOT_FOUND", userToShareId),
@@ -119,7 +119,7 @@ public sealed class GrantBotCommand(
             if (user.ActiveBudget is { } activeBudget)
                 return (userToShare, activeBudget);
 
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_ACTIVE_BUDGET",
@@ -133,7 +133,7 @@ public sealed class GrantBotCommand(
                 .Where(e => e.Name == budgetName)
                 .ToListAsync(cancellationToken) is not { Count: > 0 } budgets)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "BUDGET_NOT_FOUND", budgetName.EscapeHtml()),
@@ -167,7 +167,7 @@ public sealed class GrantBotCommand(
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
-                    await bot
+                    await botWrapper
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,

@@ -8,7 +8,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class ListBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -29,7 +29,7 @@ public sealed class ListBotCommand(
 
         if (!budgets.Any())
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_BUDGETS",
@@ -40,7 +40,8 @@ public sealed class ListBotCommand(
 
         await budgets.SendPaginatedAsync(
             4096,
-            (pageBuilder, pageNumber) => { pageBuilder.Append(string.Format(TR.L + "LIST_INTRO", pageNumber)); }, budget =>
+            (pageBuilder, pageNumber) => { pageBuilder.Append(string.Format(TR.L + "LIST_INTRO", pageNumber)); },
+            budget =>
             {
                 var (@in, @out) = user.ActiveBudgetId == budget.Id
                     ? ("<b>", "</b>")
@@ -60,7 +61,7 @@ public sealed class ListBotCommand(
                 pageBuilder.AppendLine();
                 pageBuilder.AppendLine(currentString);
             }, async (pageContent, token) =>
-                await bot
+                await botWrapper
                     .SendTextMessageAsync(
                         currentUserService.TelegramUser.Id,
                         pageContent,

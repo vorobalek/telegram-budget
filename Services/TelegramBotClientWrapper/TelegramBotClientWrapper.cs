@@ -14,8 +14,10 @@ public class TelegramBotClientWrapper(
 {
     public ITelegramBotClient BotClient => botClient;
 
-    public Task<Message> SendTextMessageAsync(ChatId chatId, string text, int? messageThreadId = default, ParseMode? parseMode = default,
-        IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default, bool? disableNotification = default,
+    public Task<Message> SendTextMessageAsync(ChatId chatId, string text, int? messageThreadId = default,
+        ParseMode? parseMode = default,
+        IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default,
+        bool? disableNotification = default,
         bool? protectContent = default, int? replyToMessageId = default, bool? allowSendingWithoutReply = default,
         IReplyMarkup? replyMarkup = default, CancellationToken cancellationToken = default)
     {
@@ -24,7 +26,7 @@ public class TelegramBotClientWrapper(
             .SendTextMessageAsync(
                 chatId,
 #if DEBUG_RESPONSE_TIME
-                text: $"{text}\n\n{time:F0} ms",
+                $"{text}\n\n{time:F0} ms",
 #else
                 text,
 #endif
@@ -41,7 +43,8 @@ public class TelegramBotClientWrapper(
     }
 
     public Task<Message> EditMessageTextAsync(ChatId chatId, int messageId, string text, ParseMode? parseMode = default,
-        IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default, InlineKeyboardMarkup? replyMarkup = default,
+        IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default,
+        InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default)
     {
         var time = httpContextAccessor.HttpContext?.TryGetRequestTimeMs();
@@ -50,7 +53,7 @@ public class TelegramBotClientWrapper(
                 chatId,
                 messageId,
 #if DEBUG_RESPONSE_TIME
-                text: $"{text}\n\n{time:F0} ms",
+                $"{text}\n\n{time:F0} ms",
 #else
                 text,
 #endif

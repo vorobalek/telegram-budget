@@ -9,7 +9,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class GrantPrefixBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -21,7 +21,7 @@ public sealed class GrantPrefixBotCommand(
             !long.TryParse(args[0], out var userToShareId) ||
             !Guid.TryParse(args[1], out var budgetId))
             return;
-        
+
         if (await db
                 .Budgets
                 .FirstOrDefaultAsync(e => e.Id == budgetId, cancellationToken) is not { } budgetToShare)
@@ -38,7 +38,7 @@ public sealed class GrantPrefixBotCommand(
                         e.BudgetId == budgetId,
                     cancellationToken))
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_GRANTED", userToShare.GetFullNameLink(),
@@ -70,7 +70,7 @@ public sealed class GrantPrefixBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var participantId in participantIds)
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     participantId,
                     string.Format(TR.L + "GRANTED_TO_USER", budgetToShare.Name.EscapeHtml(),
@@ -78,7 +78,7 @@ public sealed class GrantPrefixBotCommand(
                     parseMode: ParseMode.Html,
                     cancellationToken: cancellationToken);
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 userToShare.Id,
                 string.Format(TR.L + "GRANTED_TO_YOU", budgetToShare.Name.EscapeHtml(),

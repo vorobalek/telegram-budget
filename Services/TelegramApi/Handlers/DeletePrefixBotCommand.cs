@@ -8,7 +8,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class DeletePrefixBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -22,7 +22,7 @@ public sealed class DeletePrefixBotCommand(
 
         if (budget.CreatedBy != currentUserService.TelegramUser.Id)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "DELETION_RESTRICTED", budget.Name.EscapeHtml()),
@@ -40,7 +40,7 @@ public sealed class DeletePrefixBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var participant in participants)
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     participant.ParticipantId,
                     string.Format(TR.L + "DELETED", budget.Name.EscapeHtml(),

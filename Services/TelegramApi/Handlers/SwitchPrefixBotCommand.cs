@@ -8,7 +8,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class SwitchPrefixBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -25,7 +25,7 @@ public sealed class SwitchPrefixBotCommand(
         db.Users.Update(user);
         await db.SaveChangesAsync(cancellationToken);
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "SWITCHED", budget.Name.EscapeHtml()) +

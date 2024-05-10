@@ -10,6 +10,8 @@ public static class TelegramPaginatorHelper
 
     public delegate string CreateCurrentString<in T>(T element);
 
+    public delegate Task SendPageAsync(string pageContent, CancellationToken cancellationToken);
+
     public static IEnumerable<string> CreatePaginated<T>(
         this IEnumerable<T> enumerable,
         AppendNewPageHeader appendNewPageHeader,
@@ -52,8 +54,6 @@ public static class TelegramPaginatorHelper
         yield return pageBuilder.ToString();
     }
 
-    public delegate Task SendPageAsync(string pageContent, CancellationToken cancellationToken);
-
     public static async Task SendPaginatedAsync<T>(this IEnumerable<T> enumerable,
         int pageSizeLimit,
         AppendNewPageHeader appendNewPageHeader,
@@ -68,11 +68,9 @@ public static class TelegramPaginatorHelper
                      createCurrentString,
                      appendCurrentString,
                      pageSizeLimit))
-        {
             await sendPageAsync(
                 pageContent,
                 cancellationToken);
-        }
     }
 
     public static string? CreatePage<T>(this IEnumerable<T> enumerable,
@@ -91,7 +89,7 @@ public static class TelegramPaginatorHelper
                 appendCurrentString,
                 pageSizeLimit)
             .ToArray();
-        
+
         actualPageCount = pagesContent.Length;
         actualPageNumber = Math.Min(pageNumber, actualPageCount);
 

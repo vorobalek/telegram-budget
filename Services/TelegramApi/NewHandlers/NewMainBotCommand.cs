@@ -10,16 +10,21 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.NewHandlers;
 
 public class NewMainBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db,
     IDateTimeProvider dateTime)
 {
     public async Task ProcessAsync(
-        CancellationToken cancellationToken,
-        int? callbackQueryMessageId = null)
+        int? callbackQueryMessageId,
+        CancellationToken cancellationToken)
     {
-        var reply = await PrepareRelyAsync(cancellationToken);
+        var (activeBudgetId, timeZone, userUrl) = await GetUserDataAsync(cancellationToken);
+        var reply = await PrepareRelyAsync(
+            activeBudgetId,
+            timeZone,
+            userUrl,
+            cancellationToken);
 
         await SubmitReplyAsync(
             callbackQueryMessageId,
@@ -27,43 +32,47 @@ public class NewMainBotCommand(
             cancellationToken);
     }
 
-    private async Task<string> PrepareRelyAsync(CancellationToken cancellationToken)
+    private async Task<string> PrepareRelyAsync(
+        Guid? budgetId,
+        TimeSpan timeZone,
+        string userUrl,
+        CancellationToken cancellationToken)
     {
-        var userData = await GetUserDataAsync(cancellationToken);
-        var userToday = dateTime.UtcNow().DateTime.Add(userData.TimeZone).Date;
-        
+        var userToday = dateTime.UtcNow().DateTime.Add(timeZone).Date;
+
         var menuTextBuilder = new StringBuilder();
         menuTextBuilder.AppendLine(
             string.Format(
-                TR.L + "MENU_GREETING", 
-                userData.Url));
+                TR.L + "MENU_GREETING",
+                userUrl));
         menuTextBuilder.AppendLine();
 
-        if (!userData.ActiveBudgetId.HasValue ||
-            await GetActiveBudgetNameAsync(userData.ActiveBudgetId.Value, cancellationToken) is not { } activeBudgetName)
+        if (!budgetId.HasValue ||
+            await GetBudgetNameAsync(budgetId.Value, cancellationToken) is not { } budgetName)
         {
             menuTextBuilder.AppendLine(TR.L + "NO_ACTIVE_BUDGET");
             return menuTextBuilder.ToString();
         }
+
+        var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
         
-        var transactions = await GetTransactionsReversedAsync(userData.ActiveBudgetId.Value, cancellationToken);
         menuTextBuilder.AppendLine(
             string.Format(
-                TR.L + "MENU_ACTIVE_BUDGET", 
-                activeBudgetName, 
+                TR.L + "MENU_ACTIVE_BUDGET",
+                budgetName,
                 $"{transactions.Sum(x => x.Amount):0.00}"));
         menuTextBuilder.AppendLine();
 
         if (transactions
-                .Where(transaction => transaction.CreatedAt.Add(userData.TimeZone).Date == userToday)
+                .Where(transaction => transaction.CreatedAt.Add(timeZone).Date == userToday)
                 .OrderByDescending(transaction => transaction.CreatedAt)
                 .ToArray() is not { } todayTransactions ||
             todayTransactions.Length == 0)
         {
             menuTextBuilder.AppendLine(
                 string.Format(
-                    TR.L + "MENU_NO_TRANSACTIONS_TODAY", 
-                    activeBudgetName));
+                    TR.L + "MENU_NO_TRANSACTIONS_TODAY",
+                    budgetName));
             return menuTextBuilder.ToString();
         }
 
@@ -74,11 +83,11 @@ public class NewMainBotCommand(
                     1,
                     (builder, _) =>
                     {
-                        builder.AppendLine(string.Format(TR.L + "MENU_TRANSACTIONS_TODAY", activeBudgetName));
+                        builder.AppendLine(string.Format(TR.L + "MENU_TRANSACTIONS_TODAY", budgetName));
                         builder.AppendLine();
                     },
-                    transaction => $"<b>{(transaction.Amount >= 0 
-                        ? $"➕ {transaction.Amount:0.00}" 
+                    transaction => $"<b>{(transaction.Amount >= 0
+                        ? $"➕ {transaction.Amount:0.00}"
                         : $"➖ {Math.Abs(transaction.Amount):0.00}")}</b> <i>{transaction.Comment?.EscapeHtml() ?? string.Empty}</i>",
                     (builder, currentString) => builder.AppendLine(currentString),
                     out _,
@@ -87,7 +96,8 @@ public class NewMainBotCommand(
         return menuTextBuilder.ToString();
     }
 
-    private async Task<(Guid? ActiveBudgetId, TimeSpan TimeZone, string Url)> GetUserDataAsync(CancellationToken cancellationToken)
+    private async Task<(Guid? ActiveBudgetId, TimeSpan TimeZone, string Url)> GetUserDataAsync(
+        CancellationToken cancellationToken)
     {
         var data = await db.Users
             .Where(e => e.Id == currentUserService.TelegramUser.Id)
@@ -102,7 +112,7 @@ public class NewMainBotCommand(
         return (data.ActiveBudgetId, data.TimeZone, data.Url);
     }
 
-    private Task<string?> GetActiveBudgetNameAsync(Guid budgetId, CancellationToken cancellationToken)
+    private Task<string?> GetBudgetNameAsync(Guid budgetId, CancellationToken cancellationToken)
     {
         return db.Budgets
             .Where(e => e.Id == budgetId)
@@ -124,7 +134,7 @@ public class NewMainBotCommand(
             {
                 e.Amount,
                 e.Comment,
-                e.CreatedAt,
+                e.CreatedAt
             })
             .OrderByDescending(e => e.CreatedAt)
             .ToArrayAsync(cancellationToken);
@@ -142,13 +152,13 @@ public class NewMainBotCommand(
     }
 
     private async Task SubmitReplyAsync(
-        int? callbackQueryMessageId, 
-        string reply, 
+        int? callbackQueryMessageId,
+        string reply,
         CancellationToken cancellationToken)
     {
         if (callbackQueryMessageId.HasValue)
-            await bot.EditMessageTextAsync(
-                chatId: currentUserService.TelegramUser.Id,
+            await botWrapper.EditMessageTextAsync(
+                currentUserService.TelegramUser.Id,
                 text: reply,
                 messageId: callbackQueryMessageId.Value,
                 parseMode: ParseMode.Html,
@@ -157,9 +167,9 @@ public class NewMainBotCommand(
             );
 
         else
-            await bot.SendTextMessageAsync(
-                chatId: currentUserService.TelegramUser.Id,
-                text: reply,
+            await botWrapper.SendTextMessageAsync(
+                currentUserService.TelegramUser.Id,
+                reply,
                 parseMode: ParseMode.Html,
                 replyMarkup: Keyboards.MenuInline,
                 cancellationToken: cancellationToken);

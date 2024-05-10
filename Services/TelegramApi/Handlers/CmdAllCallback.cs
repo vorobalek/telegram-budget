@@ -8,17 +8,17 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class CmdAllCallback(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
     public Task ProcessAsync(
-        Message? callbackQueryMessage, 
+        Message? callbackQueryMessage,
         CancellationToken cancellationToken)
     {
         if (callbackQueryMessage is null) return Task.CompletedTask;
 
         var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine(TR.L + "START_INTRO");
+        stringBuilder.AppendLine(TR.L + "HELP_INTRO");
         stringBuilder.AppendLine();
 
         foreach (var command in TelegramBotConfiguration.Commands)
@@ -37,14 +37,14 @@ public sealed class CmdAllCallback(
             stringBuilder.AppendLine();
         }
 
-        stringBuilder.Append(TR.L + "START_OUTRO");
+        stringBuilder.Append(TR.L + "HELP_OUTRO");
 
-        return bot
+        return botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 callbackQueryMessage.MessageId,
                 stringBuilder.ToString(),
-                parseMode: ParseMode.Html,
+                ParseMode.Html,
                 disableWebPagePreview: true,
                 replyMarkup: Keyboards.BackToMainInline,
                 cancellationToken: cancellationToken);

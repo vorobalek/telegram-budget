@@ -9,7 +9,7 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.Handlers;
 
 public sealed class SwitchBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
@@ -27,7 +27,7 @@ public sealed class SwitchBotCommand(
         db.Users.Update(user);
         await db.SaveChangesAsync(cancellationToken);
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "SWITCHED", budget.Name.EscapeHtml()) +
@@ -42,12 +42,12 @@ public sealed class SwitchBotCommand(
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
     }
-    
+
     private async Task<string?> ExtractBudgetNameAsync(string data, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(data)) return data;
 
-        await bot
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 TR.L + "SWITCH_EXAMPLE",
@@ -65,7 +65,7 @@ public sealed class SwitchBotCommand(
                 .Where(e => e.Name == budgetName)
                 .ToListAsync(cancellationToken) is not { Count: > 0 } budgets)
         {
-            await bot
+            await botWrapper
                 .SendTextMessageAsync(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "BUDGET_NOT_FOUND", budgetName.EscapeHtml()),
@@ -99,7 +99,7 @@ public sealed class SwitchBotCommand(
                     pageBuilder.AppendLine();
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
-                    await bot
+                    await botWrapper
                         .SendTextMessageAsync(
                             currentUserService.TelegramUser.Id,
                             pageContent,

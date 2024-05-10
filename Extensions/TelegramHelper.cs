@@ -9,7 +9,7 @@ public static class TelegramHelper
                    ? " " + lastName.EscapeHtml()
                    : string.Empty)}";
     }
-    
+
     public static string GetFullNameLink(long id, string firstName, string? lastName)
     {
         return "<a href=\"tg://user?id=" +

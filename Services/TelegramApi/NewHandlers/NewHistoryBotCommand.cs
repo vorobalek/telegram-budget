@@ -11,28 +11,28 @@ using TelegramBudget.Services.TelegramBotClientWrapper;
 namespace TelegramBudget.Services.TelegramApi.NewHandlers;
 
 public class NewHistoryBotCommand(
-    ITelegramBotClientWrapper bot,
+    ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db)
 {
     public async Task ProcessAsync(
         string data,
-        Message? callbackQueryMessage,
+        int? callbackQueryMessageId,
         CancellationToken cancellationToken)
     {
-        if (callbackQueryMessage is null) return;
+        if (!callbackQueryMessageId.HasValue) return;
 
         var (budgetId, pageNumber) = ParseArguments(data);
-        var userData = await GetUserDataAsync(cancellationToken);
+        var (activeBudgetId, timeZone) = await GetUserDataAsync(cancellationToken);
 
         var reply = await PrepareReplyAsync(
-            budgetId ?? userData.ActiveBudgetId,
+            budgetId ?? activeBudgetId,
             pageNumber,
-            userData.TimeZone,
+            timeZone,
             cancellationToken);
 
         await SubmitReplyAsync(
-            callbackQueryMessage.MessageId,
+            callbackQueryMessageId.Value,
             reply,
             cancellationToken);
     }
@@ -40,12 +40,12 @@ public class NewHistoryBotCommand(
     private static (Guid? budgetId, int pageNumber) ParseArguments(string data)
     {
         var arguments = data.Split('.').Skip(1).ToArray();
-        
+
         if (arguments.Length < 2) return (null, 1);
-        
+
         Guid? budgetId = Guid.TryParse(arguments[0], out var budgetGuid) ? budgetGuid : null;
         var pageNumber = int.Parse(arguments[1]);
-        
+
         return (budgetId, pageNumber);
     }
 
@@ -55,7 +55,7 @@ public class NewHistoryBotCommand(
             .Where(e => e.Id == currentUserService.TelegramUser.Id)
             .Select(e => new
             {
-                e.ActiveBudgetId, 
+                e.ActiveBudgetId,
                 e.TimeZone
             })
             .SingleAsync(cancellationToken);
@@ -69,14 +69,14 @@ public class NewHistoryBotCommand(
         TimeSpan timeZone,
         CancellationToken cancellationToken)
     {
-        if (!budgetId.HasValue || 
+        if (!budgetId.HasValue ||
             await GetBudgetNameAsync(budgetId.Value, cancellationToken) is not { } budgetName)
             return (TR.L + "NO_BUDGET", null, 0, 0);
 
         var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
         if (transactions.Count == 0)
             return (string.Format(TR.L + "NO_TRANSACTIONS", budgetName.EscapeHtml()), null, 0, 0);
-        
+
         var pageContent = BuildPageContent(
             pageNumber,
             budgetName,
@@ -139,8 +139,9 @@ public class NewHistoryBotCommand(
 
     private static string? BuildPageContent(
         int requestedPageNumber,
-        string budgetName, 
-        IEnumerable<(decimal BeforeSum, decimal Amount, string? Comment, DateTime CreatedAt, string AuthorUrl)> transactions,
+        string budgetName,
+        IEnumerable<(decimal BeforeSum, decimal Amount, string? Comment, DateTime CreatedAt, string AuthorUrl)>
+            transactions,
         TimeSpan timeZone,
         out int actualPageNumber,
         out int actualPageCount)
@@ -154,8 +155,8 @@ public class NewHistoryBotCommand(
                         string.Format(TR.L + "HISTORY_INTRO", budgetName.EscapeHtml(), pageNumber)),
                 transaction =>
                     $"{transaction.BeforeSum:0.00} " +
-                    $"<b>{(transaction.Amount >= 0 
-                        ? $"➕ {transaction.Amount:0.00}" 
+                    $"<b>{(transaction.Amount >= 0
+                        ? $"➕ {transaction.Amount:0.00}"
                         : $"➖ {Math.Abs(transaction.Amount):0.00}")}</b> " +
                     $"➡️ {transaction.BeforeSum + transaction.Amount:0.00}" +
                     (transaction.Comment is not null
@@ -192,15 +193,15 @@ public class NewHistoryBotCommand(
     {
         var keyboard = GetKeyboard(
             reply.BudgetSlug,
-            reply.PageNumber, 
+            reply.PageNumber,
             reply.PageCount);
-        
-        return bot
+
+        return botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 messageId,
                 reply.Text,
-                parseMode: ParseMode.Html,
+                ParseMode.Html,
                 replyMarkup: keyboard,
                 cancellationToken: cancellationToken);
     }
