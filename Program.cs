@@ -1,5 +1,3 @@
-#define DEBUG_RESPONSE_TIME
-
 global using LPlus;
 using Common.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -71,7 +69,7 @@ var host = Host
             services.AddSingleton<GlobalCancellationTokenSource>();
             services.AddScoped<ITraceService>(sp =>
                 TraceService.Create(
-                    "trace",
+                    Guid.NewGuid().ToString("N"),
                     sp.GetRequiredService<ILoggerFactory>()));
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ITelegramBotClientWrapper, TelegramBotClientWrapper>();
@@ -94,9 +92,7 @@ var host = Host
 
         builder.Configure(app =>
         {
-#if DEBUG_RESPONSE_TIME
             app.UseTrace();
-#endif
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
             app.UseWhen(

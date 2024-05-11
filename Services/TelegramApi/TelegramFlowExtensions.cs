@@ -301,7 +301,7 @@ public static class TelegramFlowExtensions
                             .WithInjection<ITraceService>()
                             .WithAsyncProcessing((context, trace, _) =>
                             {
-                                trace.LogTrace($"MSG {context.Message.From!.Id} {context.Text}");
+                                trace.Log(LogLevel.Debug, $"MSG {context.Message.From!.Id} {context.Text}");
                                 return Task.CompletedTask;
                             }))
                     )
@@ -310,7 +310,7 @@ public static class TelegramFlowExtensions
                             .WithInjection<ITraceService>()
                             .WithAsyncProcessing((context, trace, _) =>
                             {
-                                trace.LogTrace($"EDT {context.EditedMessage.From!.Id} {context.Text}");
+                                trace.Log(LogLevel.Debug, $"EDT {context.EditedMessage.From!.Id} {context.Text}");
                                 return Task.CompletedTask;
                             })))
                     .ForCallbackQuery(callbackQuery => callbackQuery
@@ -319,7 +319,7 @@ public static class TelegramFlowExtensions
                             .WithInjection<ITraceService>()
                             .WithAsyncProcessing((context, trace, _) =>
                             {
-                                trace.LogTrace($"CLB {context.CallbackQuery.From!.Id} {context.Data}");
+                                trace.Log(LogLevel.Debug, $"CLB {context.CallbackQuery.From!.Id} {context.Data}");
                                 return Task.CompletedTask;
                             })))
                     .WithDisplayName("FullLogging")
@@ -330,15 +330,10 @@ public static class TelegramFlowExtensions
         this IServiceProvider serviceProvider,
         Func<IServiceProvider, T> builder) where T : class
     {
-        //var trace = serviceProvider.GetService<ITraceService>();
-        var service = builder(serviceProvider);
-        var serviceTypeName = service switch
+        using (serviceProvider.GetRequiredService<ITraceService>().Fixed("telegram_flow_init"))
         {
-            IUpdateHandler => nameof(IUpdateHandler),
-            _ => service.GetType().GetName()
-        };
-        //trace?.LogDebug($"{serviceTypeName} created");
-
-        return service;
+            var service = builder(serviceProvider);
+            return service;
+        }
     }
 }

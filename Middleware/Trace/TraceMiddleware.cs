@@ -8,10 +8,10 @@ internal sealed class TraceMiddleware(RequestDelegate next)
         HttpContext httpContext,
         ITraceService trace)
     {
-        using (trace.Create("request"))
+        using (trace.Scope("request_time"))
         {
             await next(httpContext);
         }
-        trace.LogDebugAll();
+        trace.LogSynced(LogLevel.Debug);
     }
 }

@@ -14,7 +14,7 @@ public class TraceService : ITraceService
     private readonly ILoggerFactory _loggerFactory;
     private readonly ConcurrentStack<TraceService> _stack;
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
-    private readonly ConcurrentDictionary<string, ConcurrentBag<long>> _synced = new();
+    private readonly ConcurrentDictionary<string, long> _synced = new();
 
     public static ITraceService Create(
         string key,
@@ -39,14 +39,16 @@ public class TraceService : ITraceService
 
     public long Milliseconds => _stopwatch.ElapsedMilliseconds;
 
-    public void LogTrace(
+    public void Log(
+        LogLevel logLevel,
         string key,
         [System.Runtime.CompilerServices.CallerMemberName] string memberName = "",
         [System.Runtime.CompilerServices.CallerFilePath] string sourceFilePath = "",
         [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0)
     {
         var value = _stopwatch.ElapsedMilliseconds;
-        _logger.LogTrace(
+        _logger.Log(
+            logLevel,
             "[{Milliseconds} ms] {Key}\n{MemberName}\n{SourceFilePath}:{SourceLineNumber}", 
             value, 
             key,
@@ -55,12 +57,12 @@ public class TraceService : ITraceService
             sourceLineNumber);
     }
 
-    public ITraceService Create(
+    public ITraceService Scope(
         string? key = null,
         string memberName = "")
     {
         if (_stack.TryPeek(out var peek))
-            return peek.Create(key, memberName);
+            return peek.Scope(key, memberName);
 
         key = key switch
         {
@@ -78,19 +80,47 @@ public class TraceService : ITraceService
         return trace;
     }
 
-    public void LogDebugAll()
+    public ITraceService Fixed(string key)
     {
+        if (_stack.TryPeek(out var peek))
+            return peek.Fixed(key);
+
+        var trace = new TraceService(key, _loggerFactory, _stack.ToList().AsReadOnly(), this);
+        _stack.Push(trace);
+
+        return trace;
+    }
+
+    public void LogAll(LogLevel logLevel)
+    {
+        var orderedMetrics = _synced
+            .Concat([new KeyValuePair<string, long>(_key, _stopwatch.ElapsedMilliseconds)])
+            .OrderBy(e => e.Key);
+        
         var stringBuilder = new StringBuilder();
-        foreach (var metrics in _synced.OrderBy(e => e.Key))
+        foreach (var metrics in orderedMetrics)
         {
-            foreach (var value in metrics.Value)
-            {
-                stringBuilder.AppendLine($"[{value} ms] {metrics.Key}");
-            }
+            stringBuilder.AppendLine($"[{metrics.Value} ms] {metrics.Key}");
         }
 #pragma warning disable CA2254
         // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
-        _logger.LogDebug(stringBuilder.ToString());
+        _logger.Log(logLevel, stringBuilder.ToString());
+#pragma warning restore CA2254
+    }
+
+    public void LogSynced(LogLevel logLevel)
+    {
+        var orderedMetrics = _synced
+            .OrderBy(e => e.Key);
+        
+        var stringBuilder = new StringBuilder();
+        foreach (var metrics in orderedMetrics)
+        {
+            stringBuilder.AppendLine($"[{metrics.Value} ms] {metrics.Key}");
+        }
+#pragma warning disable CA2254
+        // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+        _logger.Log(logLevel, stringBuilder.ToString());
 #pragma warning restore CA2254
     }
 
@@ -108,25 +138,13 @@ public class TraceService : ITraceService
             {
                 _parent?._synced.AddOrUpdate(
                     metrics.Key,
-                    _ => new ConcurrentBag<long>(metrics.Value),
-                    (_, v) =>
-                    {
-                        foreach (var value in metrics.Value)
-                        {
-                            v.Add(value);
-                        }
-
-                        return v;
-                    });
+                    _ => metrics.Value,
+                    (_, v) => v + metrics.Value);
             }
             _parent?._synced.AddOrUpdate(
                 _key,
-                _ => new ConcurrentBag<long>([_stopwatch.ElapsedMilliseconds]),
-                (_, v) =>
-                {
-                    v.Add(_stopwatch.ElapsedMilliseconds);
-                    return v;
-                });
+                _ => _stopwatch.ElapsedMilliseconds,
+                (_, v) => v + _stopwatch.ElapsedMilliseconds);
             _logger.LogTrace("[trace disposed {Milliseconds} ms] {Key}", _stopwatch.ElapsedMilliseconds, _key);
         }
         _disposed = true;

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 using TelegramBudget.Extensions;
@@ -18,8 +17,11 @@ public class WebhookController(
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Update update)
     {
-        currentUserService.TelegramUser = update.GetUser();
-        await telegramApiService.HandleUpdateAsync(update, cancellationTokenSource.Token);
-        return Ok();
+        using (trace.Scope("controller"))
+        {
+            currentUserService.TelegramUser = update.GetUser();
+            await telegramApiService.HandleUpdateAsync(update, cancellationTokenSource.Token);
+            return Ok();
+        }
     }
 }
