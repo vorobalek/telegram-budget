@@ -19,7 +19,7 @@ public sealed class MainCallback(
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 callbackQueryMessage.MessageId,
-                TR.L + "START_GREETING",
+                TR.L + "HELP_GREETING",
                 ParseMode.Html,
                 replyMarkup: Keyboards.CmdAllInline,
                 cancellationToken: cancellationToken);

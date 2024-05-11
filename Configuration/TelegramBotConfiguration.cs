@@ -21,12 +21,17 @@ public static class TelegramBotConfiguration
             .Select(long.Parse)
             .ToArray();
 
-    public static readonly BotCommand[] Commands =
+    public static readonly BotCommand[] DeclaredCommands =
     {
         new()
         {
             Command = "/start",
             Description = TR.L + "START"
+        },
+        new()
+        {
+            Command = "/help",
+            Description = TR.L + "HELP"
         },
         new()
         {

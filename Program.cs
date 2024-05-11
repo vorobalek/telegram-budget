@@ -69,7 +69,8 @@ var host = Host
             services.AddSingleton<GlobalCancellationTokenSource>();
             services.AddScoped<ITraceService>(sp =>
                 TraceService.Create(
-                    Guid.NewGuid().ToString("N"),
+                    "tg_budget",
+                    $"Trace.{Guid.NewGuid():N}",
                     sp.GetRequiredService<ILoggerFactory>()));
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ITelegramBotClientWrapper, TelegramBotClientWrapper>();

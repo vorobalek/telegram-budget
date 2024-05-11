@@ -10,7 +10,7 @@ public static class Keyboards
     public delegate string SelectItemInlineButtonProvider<in T>(T key);
 
     public static readonly InlineKeyboardMarkup CmdAllInline =
-        new([[InlineKeyboardButton.WithCallbackData(TR.L + "START_COMMANDS", "cmd.all")]]);
+        new([[InlineKeyboardButton.WithCallbackData(TR.L + "HELP_COMMANDS", "cmd.all")]]);
 
     public static readonly InlineKeyboardButton BackToMainInlineButtonOld =
         InlineKeyboardButton.WithCallbackData(TR.L + "BACK", "main.old");

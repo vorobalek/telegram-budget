@@ -1,6 +1,8 @@
 {
   "Localization": {
     "ru": {
+      "START": "Главная страница",
+      "START_EXAMPLE": "\uD83D\uDCCC <b>/start</b> Главная страница",
       "_MAIN_GREETING": "\uD83D\uDC4B\uD83C\uDFFB <b>Привет, {0}</b>",
       "_MAIN_NO_BUDGET": "\n\n<b>У Вас не выбран <u>активный</u> бюджет.</b>\n\nВыберите \uD83D\uDD0D <b>Переключить</b>, чтобы переключиться на один из доступных Вам бюджетов или создать новый.",
       "_MAIN_ACTIVE_BUDGET": "\n\n\uD83D\uDCB0В бюджете <b>{0}</b> доступно <b>{1:0.00}</b>",

@@ -18,10 +18,10 @@ public sealed class CmdAllCallback(
         if (callbackQueryMessage is null) return Task.CompletedTask;
 
         var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine(TR.L + "START_INTRO");
+        stringBuilder.AppendLine(TR.L + "HELP_INTRO");
         stringBuilder.AppendLine();
 
-        foreach (var command in TelegramBotConfiguration.Commands)
+        foreach (var command in TelegramBotConfiguration.DeclaredCommands)
         {
             var commandExampleTranslationKey =
                 command.Command
@@ -37,7 +37,7 @@ public sealed class CmdAllCallback(
             stringBuilder.AppendLine();
         }
 
-        stringBuilder.Append(TR.L + "START_OUTRO");
+        stringBuilder.Append(TR.L + "HELP_OUTRO");
 
         return botWrapper
             .EditMessageTextAsync(

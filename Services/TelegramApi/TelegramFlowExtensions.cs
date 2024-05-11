@@ -22,7 +22,7 @@ public static class TelegramFlowExtensions
 
             .AddBotCommand<StartBotCommand>(
                 (handler, _, token) => handler.ProcessAsync(token),
-                "start", "help")
+                "help")
 
             .AddBotCommand<ListBotCommand>(
                 (handler, _, token) => handler.ProcessAsync(token),
@@ -246,7 +246,7 @@ public static class TelegramFlowExtensions
     public static IServiceCollection AddTelegramFlowNewInterface(this IServiceCollection services)
     {
         return services
-            .AddFullLogging()
+            .EnableFullLogging()
             .AddNewBotCommand<NewMainHandler>(NewMainHandler.Command)
             .AddNewCallbackData<NewMainHandler>(NewMainHandler.Command)
             
@@ -291,7 +291,7 @@ public static class TelegramFlowExtensions
                 targetCommands);
     }
 
-    private static IServiceCollection AddFullLogging(this IServiceCollection services)
+    private static IServiceCollection EnableFullLogging(this IServiceCollection services)
     {
         return services
             .AddScoped<IUpdateHandler>(serviceProvider => serviceProvider

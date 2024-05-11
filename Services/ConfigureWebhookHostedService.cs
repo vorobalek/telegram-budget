@@ -28,7 +28,7 @@ public class ConfigureWebhookHostedService(
             cancellationToken: cancellationToken);
         await botClient
             .SetMyCommandsAsync(
-                TelegramBotConfiguration.Commands,
+                TelegramBotConfiguration.DeclaredCommands,
                 cancellationToken: cancellationToken);
     }
 

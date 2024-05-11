@@ -6,11 +6,12 @@ namespace TelegramBudget.Services.Trace;
 
 public class TraceService : ITraceService
 {
-    private TraceService? _parent;
+    private readonly TraceService? _parent;
     
     private bool _disposed;
     private readonly string _key;
     private readonly ILogger _logger;
+    private readonly string _loggerCategoryName;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ConcurrentStack<TraceService> _stack;
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
@@ -18,21 +19,24 @@ public class TraceService : ITraceService
 
     public static ITraceService Create(
         string key,
+        string loggerCategoryName,
         ILoggerFactory loggerFactory)
     {
-        return new TraceService(key, loggerFactory, [], null);
+        return new TraceService(key, loggerCategoryName, loggerFactory, [], null);
     }
 
     private TraceService(
         string key,
+        string loggerCategoryName,
         ILoggerFactory loggerFactory,
         IReadOnlyCollection<TraceService> stack,
         TraceService? parent)
     {
         _key = key;
+        _loggerCategoryName = loggerCategoryName;
         _loggerFactory = loggerFactory;
         _stack = new ConcurrentStack<TraceService>(stack);
-        _logger = _loggerFactory.CreateLogger($"Trace.{_key}");
+        _logger = _loggerFactory.CreateLogger(loggerCategoryName);
         _logger.LogTrace("[trace created {Milliseconds} ms] {Key}", _stopwatch.ElapsedMilliseconds, _key);
         _parent = parent;
     }
@@ -74,7 +78,12 @@ public class TraceService : ITraceService
             _ => $"{_key}_{key}"
         };
 
-        var trace = new TraceService(key, _loggerFactory, _stack.ToList().AsReadOnly(), this);
+        var trace = new TraceService(
+            key, 
+            _loggerCategoryName,
+            _loggerFactory, 
+            _stack.ToList().AsReadOnly(), 
+            this);
         _stack.Push(trace);
 
         return trace;
@@ -85,7 +94,12 @@ public class TraceService : ITraceService
         if (_stack.TryPeek(out var peek))
             return peek.Fixed(key);
 
-        var trace = new TraceService(key, _loggerFactory, _stack.ToList().AsReadOnly(), this);
+        var trace = new TraceService(
+            key, 
+            _loggerCategoryName,
+            _loggerFactory, 
+            _stack.ToList().AsReadOnly(), 
+            this);
         _stack.Push(trace);
 
         return trace;

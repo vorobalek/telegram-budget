@@ -1,3 +1,7 @@
+#if DEBUG
+#define DEBUG_RESPONSE_TIME
+#endif
+
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;

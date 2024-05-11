@@ -13,7 +13,7 @@ public sealed class StartBotCommand(
         return botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
-                TR.L + "START_GREETING",
+                TR.L + "HELP_GREETING",
                 parseMode: ParseMode.Html,
                 disableWebPagePreview: true,
                 replyMarkup: Keyboards.CmdAllInline,

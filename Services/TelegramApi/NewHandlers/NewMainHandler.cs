@@ -15,7 +15,7 @@ public class NewMainHandler(
     ApplicationDbContext db,
     IDateTimeProvider dateTime) : IBotCommandHandler, ICallbackQueryHandler
 {
-    public const string Command = "main";
+    public const string Command = "start";
 
     public async Task ProcessAsync(string _, CancellationToken cancellationToken)
     {
