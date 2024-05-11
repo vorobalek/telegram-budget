@@ -8,14 +8,6 @@
         <LangVersion>latestmajor</LangVersion>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <DefineConstants>TRACE;DEBUG_RESPONSE_TIME</DefineConstants>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <DefineConstants>TRACE</DefineConstants>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="Common.Database" Version="1.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.3"/>

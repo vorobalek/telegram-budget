@@ -13,4 +13,8 @@ public static class AppConfiguration
 
     public static readonly string Port = Environment.GetEnvironmentVariable("PORT")!;
     public static readonly string? DbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+
+    public static readonly bool DebugResponseTime =
+        bool.TryParse(Environment.GetEnvironmentVariable("DEBUG_RESPONSE_TIME"), out var debugResponseTime) &&
+        debugResponseTime;
 }

@@ -2,6 +2,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBudget.Configuration;
 using TelegramBudget.Services.Trace;
 
 namespace TelegramBudget.Services.TelegramBotClientWrapper;
@@ -23,11 +24,9 @@ public class TelegramBotClientWrapper(
         return botClient
             .SendTextMessageAsync(
                 chatId,
-#if DEBUG_RESPONSE_TIME
-                $"{text.Trim()}\n\n{trace.Milliseconds} ms",
-#else
-                text.Trim(),
-#endif
+                AppConfiguration.DebugResponseTime
+                    ? $"{text.Trim()}\n\n{trace.Milliseconds} ms"
+                    : text.Trim(),
                 messageThreadId,
                 parseMode,
                 entities,
@@ -49,11 +48,9 @@ public class TelegramBotClientWrapper(
             .EditMessageTextAsync(
                 chatId,
                 messageId,
-#if DEBUG_RESPONSE_TIME
-                $"{text.Trim()}\n\n{trace.Milliseconds} ms",
-#else
-                text.Trim(),
-#endif
+                AppConfiguration.DebugResponseTime
+                    ? $"{text.Trim()}\n\n{trace.Milliseconds} ms"
+                    : text.Trim(),
                 parseMode,
                 entities,
                 disableWebPagePreview,
