@@ -30,7 +30,7 @@ internal sealed class TelegramApiService(
             user = await CreateUserAsync(scope, cancellationToken);
 
         if (TelegramBotConfiguration.IsUserAuthorizationEnabled &&
-            !await IsUserAuthorizedAsync(scope, cancellationToken))
+            !IsUserAuthorized(scope))
             return;
 
         await UpdateUserAsync(scope, user, cancellationToken);
@@ -71,17 +71,25 @@ internal sealed class TelegramApiService(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private Task<bool> IsUserAuthorizedAsync(ITracee trace, CancellationToken cancellationToken)
+    private bool IsUserAuthorized(ITracee trace)
     {
         using var subScope = trace.Scoped("auth_user");
-        return Task.FromResult(TelegramBotConfiguration.AuthorizedUserIds.Contains(currentUserService.TelegramUser.Id));
+        return TelegramBotConfiguration.AuthorizedUserIds.Contains(currentUserService.TelegramUser.Id);
     }
 
     private async Task ProcessUpdateAsync(ITracee trace, Update update, CancellationToken cancellationToken)
     {
         using (trace.Scoped("prehandle"))
         {
-            await preHandlerService.PreHandleAsync(update, cancellationToken);
+            try
+            {
+                _ = Task.Run(async () =>
+                    await preHandlerService.PreHandleAsync(update, cancellationToken), cancellationToken);
+            }
+            catch
+            {
+                //ignored fire-n-forget
+            }
         }
 
         using (trace.Scoped("handle"))

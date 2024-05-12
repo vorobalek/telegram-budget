@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBudget.Configuration;
@@ -111,13 +110,13 @@ public class NewHistoryHandler(
         return (pageContent, $"{budgetId:N}", actualPageNumber, actualPageCount);
     }
 
-    private Task<string?> GetBudgetNameAsync(
+    private async Task<string?> GetBudgetNameAsync(
         ITracee trace,
         Guid budgetId,
         CancellationToken cancellationToken)
     {
         using var scope = trace.Scoped("get_budget");
-        return db.Budgets
+        return await db.Budgets
             .Where(e => e.Id == budgetId)
             .Select(e => e.Name)
             .SingleOrDefaultAsync(cancellationToken);
@@ -228,8 +227,7 @@ public class NewHistoryHandler(
         return pageContent;
     }
 
-    private Task<Message> SubmitReplyAsync(
-        ITracee trace,
+    private async Task SubmitReplyAsync(ITracee trace,
         int messageId,
         string text,
         string? budgetSlug,
@@ -244,7 +242,7 @@ public class NewHistoryHandler(
             pageNumber,
             pageCount);
 
-        return botWrapper
+        await botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 messageId,

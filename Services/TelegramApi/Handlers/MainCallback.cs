@@ -9,13 +9,13 @@ public sealed class MainCallback(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
-    public Task ProcessAsync(
+    public async Task ProcessAsync(
         Message? callbackQueryMessage,
         CancellationToken cancellationToken)
     {
-        if (callbackQueryMessage is null) return Task.CompletedTask;
+        if (callbackQueryMessage is null) return;
 
-        return botWrapper
+        await botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 callbackQueryMessage.MessageId,

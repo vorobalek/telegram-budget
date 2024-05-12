@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
@@ -141,13 +140,13 @@ public class NewMainHandler(
         return (data.ActiveBudgetId, data.TimeZone, data.Url);
     }
 
-    private Task<string?> GetBudgetNameAsync(
+    private async Task<string?> GetBudgetNameAsync(
         ITracee trace,
         Guid budgetId,
         CancellationToken cancellationToken)
     {
         using var scope = trace.Scoped("get_budget");
-        return db.Budgets
+        return await db.Budgets
             .Where(e => e.Id == budgetId)
             .Select(e => e.Name)
             .SingleOrDefaultAsync(cancellationToken);
@@ -188,15 +187,14 @@ public class NewMainHandler(
             .ToArray();
     }
 
-    private Task<Message> SubmitReplyAsync(
-        ITracee trace,
+    private async Task SubmitReplyAsync(ITracee trace,
         int callbackQueryMessageId,
         string reply,
         bool hasActiveBudget,
         CancellationToken cancellationToken)
     {
         using var scope = trace.Scoped("submit");
-        return botWrapper.EditMessageTextAsync(
+        await botWrapper.EditMessageTextAsync(
             currentUserService.TelegramUser.Id,
             text: reply,
             messageId: callbackQueryMessageId,
@@ -206,14 +204,13 @@ public class NewMainHandler(
         );
     }
 
-    private Task<Message> SubmitReplyAsync(
-        ITracee trace,
+    private async Task SubmitReplyAsync(ITracee trace,
         string reply,
         bool hasActiveBudget,
         CancellationToken cancellationToken)
     {
         using var scope = trace.Scoped("submit");
-        return botWrapper.SendTextMessageAsync(
+        await botWrapper.SendTextMessageAsync(
             currentUserService.TelegramUser.Id,
             reply,
             parseMode: ParseMode.Html,

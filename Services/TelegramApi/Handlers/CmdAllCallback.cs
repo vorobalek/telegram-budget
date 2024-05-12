@@ -11,11 +11,11 @@ public sealed class CmdAllCallback(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
-    public Task ProcessAsync(
+    public async Task ProcessAsync(
         Message? callbackQueryMessage,
         CancellationToken cancellationToken)
     {
-        if (callbackQueryMessage is null) return Task.CompletedTask;
+        if (callbackQueryMessage is null) return;
 
         var stringBuilder = new StringBuilder();
         stringBuilder.AppendLine(TR.L + "HELP_INTRO");
@@ -39,7 +39,7 @@ public sealed class CmdAllCallback(
 
         stringBuilder.Append(TR.L + "HELP_OUTRO");
 
-        return botWrapper
+        await botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 callbackQueryMessage.MessageId,

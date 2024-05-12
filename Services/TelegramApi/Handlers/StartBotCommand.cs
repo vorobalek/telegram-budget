@@ -8,9 +8,9 @@ public sealed class StartBotCommand(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
-    public Task ProcessAsync(CancellationToken cancellationToken)
+    public async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        return botWrapper
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 TR.L + "HELP_GREETING",

@@ -13,15 +13,14 @@ public class TelegramBotClientWrapper(
 {
     public ITelegramBotClient BotClient => botClient;
 
-    public Task<Message> SendTextMessageAsync(ChatId chatId, string text, int? messageThreadId = default,
+    public async Task<Message> SendTextMessageAsync(ChatId chatId, string text, int? messageThreadId = default,
         ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default,
         bool? disableNotification = default,
         bool? protectContent = default, int? replyToMessageId = default, bool? allowSendingWithoutReply = default,
         IReplyMarkup? replyMarkup = default, CancellationToken cancellationToken = default)
     {
-        using var trace = tracee.Fixed("submit_total");
-        return botClient
+        return await botClient
             .SendTextMessageAsync(
                 chatId,
                 AppConfiguration.DebugResponseTime
@@ -39,13 +38,13 @@ public class TelegramBotClientWrapper(
                 cancellationToken);
     }
 
-    public Task<Message> EditMessageTextAsync(ChatId chatId, int messageId, string text, ParseMode? parseMode = default,
+    public async Task<Message> EditMessageTextAsync(ChatId chatId, int messageId, string text,
+        ParseMode? parseMode = default,
         IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default,
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default)
     {
-        using var trace = tracee.Fixed("submit_total");
-        return botClient
+        return await botClient
             .EditMessageTextAsync(
                 chatId,
                 messageId,

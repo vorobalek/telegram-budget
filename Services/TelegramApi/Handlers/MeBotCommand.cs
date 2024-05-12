@@ -8,9 +8,9 @@ public sealed class MeBotCommand(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService)
 {
-    public Task ProcessAsync(CancellationToken cancellationToken)
+    public async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        return botWrapper
+        await botWrapper
             .SendTextMessageAsync(
                 currentUserService.TelegramUser.Id,
                 $"<code>{currentUserService.TelegramUser.Id}</code>",

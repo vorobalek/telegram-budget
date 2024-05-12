@@ -1,6 +1,5 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBudget.Data;
@@ -110,16 +109,16 @@ public class NewSwitchHandler(
         return (data.Id, data.FirstName is null ? null : TelegramHelper.GetFullName(data.FirstName, data.LastName));
     }
 
-    private Task<User> GetUserAsync(ITracee trace, CancellationToken cancellationToken)
+    private async Task<User> GetUserAsync(ITracee trace, CancellationToken cancellationToken)
     {
         using var scope = trace.Scoped("get_user");
-        return db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
+        return await db.Users.SingleAsync(e => e.Id == currentUserService.TelegramUser.Id, cancellationToken);
     }
 
-    private Task<string?> GetBudgetNameAsync(ITracee trace, Guid budgetId, CancellationToken cancellationToken)
+    private async Task<string?> GetBudgetNameAsync(ITracee trace, Guid budgetId, CancellationToken cancellationToken)
     {
         using var scope = trace.Scoped("get_budget");
-        return db.Budgets
+        return await db.Budgets
             .Where(e => e.Id == budgetId)
             .Select(e => e.Name)
             .SingleOrDefaultAsync(cancellationToken);
@@ -171,8 +170,7 @@ public class NewSwitchHandler(
         return data.Select(e => (e.Id, e.Name, e.Sum)).ToArray();
     }
 
-    private Task<Message> SubmitReplyAsync(
-        ITracee trace,
+    private async Task SubmitReplyAsync(ITracee trace,
         int messageId,
         string text,
         ICollection<(Guid Id, string Name, decimal Sum)>? availableBudgets,
@@ -181,7 +179,7 @@ public class NewSwitchHandler(
         using var scope = trace.Scoped("submit");
         var keyboard = GetKeyboard(scope, availableBudgets);
 
-        return botWrapper
+        await botWrapper
             .EditMessageTextAsync(
                 currentUserService.TelegramUser.Id,
                 messageId,
