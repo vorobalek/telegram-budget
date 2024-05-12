@@ -20,6 +20,7 @@ public class TelegramBotClientWrapper(
         bool? protectContent = default, int? replyToMessageId = default, bool? allowSendingWithoutReply = default,
         IReplyMarkup? replyMarkup = default, CancellationToken cancellationToken = default)
     {
+        using var trace = tracee.Fixed("submit_total");
         return await botClient
             .SendTextMessageAsync(
                 chatId,
@@ -44,6 +45,7 @@ public class TelegramBotClientWrapper(
         InlineKeyboardMarkup? replyMarkup = default,
         CancellationToken cancellationToken = default)
     {
+        using var trace = tracee.Fixed("submit_total");
         return await botClient
             .EditMessageTextAsync(
                 chatId,
