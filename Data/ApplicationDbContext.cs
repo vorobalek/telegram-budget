@@ -5,23 +5,27 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Services.CurrentUser;
+using Tracee;
 
 namespace TelegramBudget.Data;
 
-public partial class ApplicationDbContext : DbContext, ICommonDbContext<ApplicationDbContext>
+public sealed partial class ApplicationDbContext : DbContext, ICommonDbContext<ApplicationDbContext>
 {
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ApplicationDbContext> _logger;
+    private readonly ITracee _tracee;
 
     public ApplicationDbContext(
         IEntityChangeListenerService<ApplicationDbContext> entityChangeListenerService,
         ICurrentUserService currentUserService,
         DbContextOptions<ApplicationDbContext> options,
-        ILogger<ApplicationDbContext> logger) : base(options)
+        ILogger<ApplicationDbContext> logger,
+        ITracee tracee) : base(options)
     {
         EntityChangeListenerService = entityChangeListenerService;
         _currentUserService = currentUserService;
         _logger = logger;
+        _tracee = tracee;
         this.SubscribeCommonDbContext();
     }
 
@@ -53,5 +57,19 @@ public partial class ApplicationDbContext : DbContext, ICommonDbContext<Applicat
             e.Participating
                 .Any(p =>
                     p.ParticipantId == _currentUserService.TelegramUser.Id));
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        using (_tracee.Scope("save"))
+        {
+            return base.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _tracee.Dispose();
     }
 }

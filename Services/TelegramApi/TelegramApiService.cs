@@ -6,7 +6,7 @@ using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.TelegramApi.PreHandler;
-using TelegramBudget.Services.Trace;
+using Tracee;
 using User = TelegramBudget.Data.Entities.User;
 
 namespace TelegramBudget.Services.TelegramApi;
@@ -16,24 +16,30 @@ internal sealed class TelegramApiService(
     ApplicationDbContext db,
     IPreHandlerService preHandlerService,
     IEnumerable<IUpdateHandler> handlers,
-    ITraceService trace)
+    ITracee tracee)
     : ITelegramApiService
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        await using var transaction = await db.Database
-            .BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
+        using (tracee.Scope("auth"))
+        {
+            await using var transaction = await db.Database
+                .BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
 
-        if (await GetUserAsync(cancellationToken) is not { } user) user = await CreateUserAsync(cancellationToken);
+            if (await GetUserAsync(cancellationToken) is not { } user) user = await CreateUserAsync(cancellationToken);
 
-        if (TelegramBotConfiguration.IsUserAuthorizationEnabled && !await IsUserAuthorizedAsync(cancellationToken))
-            return;
+            if (TelegramBotConfiguration.IsUserAuthorizationEnabled && !await IsUserAuthorizedAsync(cancellationToken))
+                return;
 
-        await UpdateUserAsync(user, cancellationToken);
+            await UpdateUserAsync(user, cancellationToken);
 
-        await transaction.CommitAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
 
-        await ProcessUpdateAsync(update, cancellationToken);
+        using (tracee.Scope("proc"))
+        {
+            await ProcessUpdateAsync(update, cancellationToken);
+        }
     }
 
     private async Task<User?> GetUserAsync(CancellationToken cancellationToken)

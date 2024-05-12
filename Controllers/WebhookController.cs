@@ -4,7 +4,7 @@ using TelegramBudget.Extensions;
 using TelegramBudget.Services;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.TelegramApi;
-using TelegramBudget.Services.Trace;
+using Tracee;
 
 namespace TelegramBudget.Controllers;
 
@@ -12,12 +12,12 @@ public class WebhookController(
     ITelegramApiService telegramApiService,
     ICurrentUserService currentUserService,
     GlobalCancellationTokenSource cancellationTokenSource,
-    ITraceService trace) : ControllerBase
+    ITracee tracee) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Update update)
     {
-        using (trace.Scope("controller"))
+        using (tracee.Scope("ctrl"))
         {
             currentUserService.TelegramUser = update.GetUser();
             await telegramApiService.HandleUpdateAsync(update, cancellationTokenSource.Token);

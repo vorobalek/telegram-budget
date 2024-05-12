@@ -11,21 +11,18 @@
       "_MAIN_TRANSACTION_NEGATIVE": "\n➖ <b>{0:0.00}</b>",
       "_MAIN_TRANSACTION_POSITIVE": "\n➕ <b>{0:0.00}</b>",
       "_MAIN_TRANSACTION_COMMENT": " – <i>{0}</i>",
-
       "_HISTORY_INTRO": "✅ <b>История транзакций по бюджету: &quot;{0}&quot;</b> <i>(страница {1})</i>",
       "_HISTORY_NO_TRANSACTIONS": "\uD83D\uDC40 <b>История транзакций по бюджету: &quot;{0}&quot;</b>\n\nВ бюджете пока нет транзакций, начните добавлять транзакции, например: <b>-100 за кофе</b>",
       "_HISTORY_TRANSACTION_NEGATIVE": "\n\n\n{0:0.00} ➖ <b>{1:0.00}</b> ➡\uFE0F {2:0.00}",
       "_HISTORY_TRANSACTION_POSITIVE": "\n\n\n{0:0.00} ➕ <b>{1:0.00}</b> ➡\uFE0F {2:0.00}",
       "_HISTORY_TRANSACTION_COMMENT": "\n<blockquote>{0}</blockquote>",
       "_HISTORY_TRANSACTION_ADDED_BY": "\n<i>добавлено {0} <a href=\"tg://user?id={1}\">{2}</a></i>",
-
       "_SWITCH_CHOOSE_BUDGET": "\uD83D\uDD0D <b>Переключитесь на один из доступных Вам бюджетов или создать новый.</b>",
       "_SWITCH_CHOOSE_BUDGET_BTN": "{0} ➡\uFE0F {1:0.00}",
       "_SWITCH_ACTIVE_BUDGET": "✅ <b>Вашим активным бюджетом выбран &quot;{0}&quot;</b>",
       "_OWNER_UNKNOWN": " <i>(владелец неизвестен)</i>",
       "_OWNER_YOU": " <i>(владелец – Вы)</i>",
       "_OWNER_USER": " <i>(владелец – <a href=\"tg://user?id={0}\">{1}</a>)</i>",
-
       "_BTN_CREATE": "✍ Создать новый",
       "_BTN_HISTORY": "\uD83D\uDDC3 История",
       "_BTN_MAIN": "↩\uFE0F На главную",

@@ -3,14 +3,13 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBudget.Configuration;
-using TelegramBudget.Services.Trace;
+using Tracee;
 
 namespace TelegramBudget.Services.TelegramBotClientWrapper;
 
 public class TelegramBotClientWrapper(
     ITelegramBotClient botClient,
-    IHttpContextAccessor httpContextAccessor,
-    ITraceService trace) : ITelegramBotClientWrapper
+    ITracee tracee) : ITelegramBotClientWrapper
 {
     public ITelegramBotClient BotClient => botClient;
 
@@ -25,7 +24,7 @@ public class TelegramBotClientWrapper(
             .SendTextMessageAsync(
                 chatId,
                 AppConfiguration.DebugResponseTime
-                    ? $"{text.Trim()}\n\n{trace.Milliseconds} ms"
+                    ? $"{text.Trim()}\n\n{tracee.Milliseconds} ms"
                     : text.Trim(),
                 messageThreadId,
                 parseMode,
@@ -49,7 +48,7 @@ public class TelegramBotClientWrapper(
                 chatId,
                 messageId,
                 AppConfiguration.DebugResponseTime
-                    ? $"{text.Trim()}\n\n{trace.Milliseconds} ms"
+                    ? $"{text.Trim()}\n\n{tracee.Milliseconds} ms"
                     : text.Trim(),
                 parseMode,
                 entities,

@@ -6,12 +6,11 @@ using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Middleware;
-using TelegramBudget.Middleware.Trace;
 using TelegramBudget.Services;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.DateTimeProvider;
 using TelegramBudget.Services.TelegramBotClientWrapper;
-using TelegramBudget.Services.Trace;
+using Tracee.AspNetCore.Extensions;
 
 var host = Host
     .CreateDefaultBuilder(args)
@@ -35,6 +34,8 @@ var host = Host
 
         builder.ConfigureServices((context, services) =>
         {
+            services.AddScoped<ExceptionHandlerMiddleware>();
+            services.AddScoped<SecretTokenValidatorMiddleware>();
             TR.Configure(options =>
             {
                 options.DetermineLanguageCodeDelegate = () => AppConfiguration.Locale;
@@ -67,17 +68,14 @@ var host = Host
             services.AddHealthChecks();
 
             services.AddSingleton<GlobalCancellationTokenSource>();
-            services.AddScoped<ITraceService>(sp =>
-                TraceService.Create(
-                    "tg_budget",
-                    $"Trace.{Guid.NewGuid():N}",
-                    sp.GetRequiredService<ILoggerFactory>()));
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ITelegramBotClientWrapper, TelegramBotClientWrapper>();
             services.AddTelegramHandlers();
 
             services.AddHttpContextAccessor();
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+
+            services.AddTracee();
         });
 
         builder.ConfigureLogging(logging =>
@@ -93,7 +91,7 @@ var host = Host
 
         builder.Configure(app =>
         {
-            app.UseTrace();
+            app.UseTracee();
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
             app.UseWhen(
