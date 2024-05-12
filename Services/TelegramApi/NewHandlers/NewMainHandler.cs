@@ -1,11 +1,13 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.DateTimeProvider;
 using TelegramBudget.Services.TelegramBotClientWrapper;
+using Tracee;
 
 namespace TelegramBudget.Services.TelegramApi.NewHandlers;
 
@@ -13,20 +15,25 @@ public class NewMainHandler(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
     ApplicationDbContext db,
-    IDateTimeProvider dateTime) : IBotCommandHandler, ICallbackQueryHandler
+    IDateTimeProvider dateTime,
+    ITracee tracee) : IBotCommandHandler, ICallbackQueryHandler
 {
     public const string Command = "start";
 
     public async Task ProcessAsync(string _, CancellationToken cancellationToken)
     {
-        var (activeBudgetId, timeZone, userUrl) = await GetUserDataAsync(cancellationToken);
+        using var trace = tracee.Scoped("main");
+        var (activeBudgetId, timeZone, userUrl) = await GetUserDataAsync(trace, cancellationToken);
+
         var text = await PrepareRelyAsync(
+            trace,
             activeBudgetId,
             timeZone,
             userUrl,
             cancellationToken);
 
         await SubmitReplyAsync(
+            trace,
             text,
             activeBudgetId.HasValue,
             cancellationToken);
@@ -34,14 +41,18 @@ public class NewMainHandler(
 
     public async Task ProcessAsync(int messageId, string _, CancellationToken cancellationToken)
     {
-        var (activeBudgetId, timeZone, userUrl) = await GetUserDataAsync(cancellationToken);
+        using var trace = tracee.Scoped("main");
+        var (activeBudgetId, timeZone, userUrl) = await GetUserDataAsync(trace, cancellationToken);
+
         var text = await PrepareRelyAsync(
+            trace,
             activeBudgetId,
             timeZone,
             userUrl,
             cancellationToken);
 
         await SubmitReplyAsync(
+            trace,
             messageId,
             text,
             activeBudgetId.HasValue,
@@ -49,11 +60,13 @@ public class NewMainHandler(
     }
 
     private async Task<string> PrepareRelyAsync(
+        ITracee trace,
         Guid? budgetId,
         TimeSpan timeZone,
         string userUrl,
         CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("prepare");
         var userToday = dateTime.UtcNow().DateTime.Add(timeZone).Date;
 
         var menuTextBuilder = new StringBuilder();
@@ -63,13 +76,13 @@ public class NewMainHandler(
                 userUrl));
 
         if (!budgetId.HasValue ||
-            await GetBudgetNameAsync(budgetId.Value, cancellationToken) is not { } budgetName)
+            await GetBudgetNameAsync(trace, budgetId.Value, cancellationToken) is not { } budgetName)
         {
             menuTextBuilder.Append(TR.L + "_MAIN_NO_BUDGET");
             return menuTextBuilder.ToString();
         }
 
-        var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
+        var transactions = await GetTransactionsReversedAsync(trace, budgetId.Value, cancellationToken);
 
         menuTextBuilder.Append(
             string.Format(
@@ -111,8 +124,10 @@ public class NewMainHandler(
     }
 
     private async Task<(Guid? ActiveBudgetId, TimeSpan TimeZone, string Url)> GetUserDataAsync(
+        ITracee trace,
         CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("get_user");
         var data = await db.Users
             .Where(e => e.Id == currentUserService.TelegramUser.Id)
             .Select(e => new
@@ -126,8 +141,12 @@ public class NewMainHandler(
         return (data.ActiveBudgetId, data.TimeZone, data.Url);
     }
 
-    private Task<string?> GetBudgetNameAsync(Guid budgetId, CancellationToken cancellationToken)
+    private Task<string?> GetBudgetNameAsync(
+        ITracee trace,
+        Guid budgetId,
+        CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("get_budget");
         return db.Budgets
             .Where(e => e.Id == budgetId)
             .Select(e => e.Name)
@@ -139,8 +158,12 @@ public class NewMainHandler(
             decimal Amount,
             string? Comment,
             DateTime CreatedAt)>
-    > GetTransactionsReversedAsync(Guid budgetId, CancellationToken cancellationToken)
+    > GetTransactionsReversedAsync(
+        ITracee trace,
+        Guid budgetId,
+        CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("get_transactions");
         var data = await db.Transactions
             .Where(e => e.BudgetId == budgetId)
             .Include(e => e.Author)
@@ -165,13 +188,15 @@ public class NewMainHandler(
             .ToArray();
     }
 
-    private async Task SubmitReplyAsync(
+    private Task<Message> SubmitReplyAsync(
+        ITracee trace,
         int callbackQueryMessageId,
         string reply,
         bool hasActiveBudget,
         CancellationToken cancellationToken)
     {
-        await botWrapper.EditMessageTextAsync(
+        using var scope = trace.Scoped("submit");
+        return botWrapper.EditMessageTextAsync(
             currentUserService.TelegramUser.Id,
             text: reply,
             messageId: callbackQueryMessageId,
@@ -181,12 +206,14 @@ public class NewMainHandler(
         );
     }
 
-    private async Task SubmitReplyAsync(
+    private Task<Message> SubmitReplyAsync(
+        ITracee trace,
         string reply,
         bool hasActiveBudget,
         CancellationToken cancellationToken)
     {
-        await botWrapper.SendTextMessageAsync(
+        using var scope = trace.Scoped("submit");
+        return botWrapper.SendTextMessageAsync(
             currentUserService.TelegramUser.Id,
             reply,
             parseMode: ParseMode.Html,

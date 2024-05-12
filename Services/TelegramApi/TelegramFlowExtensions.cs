@@ -18,7 +18,6 @@ public static class TelegramFlowExtensions
     public static IServiceCollection AddTelegramFlow(this IServiceCollection services)
     {
         return services
-            .AddTraceeDiContainer()
             .AddPreHandler()
             .AddBotCommand<StartBotCommand>(
                 (handler, _, token) => handler.ProcessAsync(token),
@@ -70,31 +69,21 @@ public static class TelegramFlowExtensions
                 .WatchServiceProvider(sp => TelegramFlow.New
                     .ForMessage(message => message
                         .ForText(text => text
-                            .WithInjection<TraceeDiContainer<TransactionPlainText>>()
+                            .WithInjection<TransactionPlainText>()
                             .WithAsyncProcessing((context, injected, token) =>
-                            {
-                                using (injected.Tracee.Scope(nameof(TransactionPlainText)))
-                                {
-                                    return injected.Injected.ProcessAsync(context.Message, context.Text, token);
-                                }
-                            })))
+                                injected.ProcessAsync(context.Message, context.Text, token))))
                     .WithDisplayName(nameof(TransactionPlainText))
-                    .Build<TraceeDiContainer<TransactionPlainText>>(sp)))
+                    .Build<TransactionPlainText>(sp)))
             .AddScoped<TransactionEditedPlainText>()
             .AddScoped<IUpdateHandler>(serviceProvider => serviceProvider
                 .WatchServiceProvider(sp => TelegramFlow.New
                     .ForEditedMessage(message => message
                         .ForText(text => text
-                            .WithInjection<TraceeDiContainer<TransactionEditedPlainText>>()
+                            .WithInjection<TransactionEditedPlainText>()
                             .WithAsyncProcessing((context, injected, token) =>
-                            {
-                                using (injected.Tracee.Scope(nameof(TransactionEditedPlainText)))
-                                {
-                                    return injected.Injected.ProcessAsync(context.EditedMessage, context.Text, token);
-                                }
-                            })))
+                                injected.ProcessAsync(context.EditedMessage, context.Text, token))))
                     .WithDisplayName(nameof(TransactionEditedPlainText))
-                    .Build<TraceeDiContainer<TransactionEditedPlainText>>(sp)))
+                    .Build<TransactionEditedPlainText>(sp)))
             .AddCallbackData<CmdAllCallback>(
                 (handler, context, token) => handler.ProcessAsync(context.CallbackQuery.Message, token),
                 "cmd.all")
@@ -121,19 +110,14 @@ public static class TelegramFlowExtensions
                                         foreach (var targetCommand in targetCommands) command.ForExact(targetCommand);
 
                                         command = command
-                                            .WithInjection<TraceeDiContainer<T>>()
+                                            .WithInjection<T>()
                                             .WithAsyncProcessing((context, injected, token) =>
-                                            {
-                                                using (injected.Tracee.Scope(typeof(T).GetName()))
-                                                {
-                                                    return processing(injected.Injected, context, token);
-                                                }
-                                            });
+                                                processing(injected, context, token));
 
                                         return command;
                                     })))
                             .WithDisplayName(typeof(T).GetName())
-                            .Build<TraceeDiContainer<T>>(sp)));
+                            .Build<T>(sp)));
     }
 
     private static IServiceCollection AddBotCommandPrefix<T>(
@@ -154,19 +138,14 @@ public static class TelegramFlowExtensions
                                         foreach (var targetCommand in targetCommands) command.ForPrefix(targetCommand);
 
                                         command = command
-                                            .WithInjection<TraceeDiContainer<T>>()
+                                            .WithInjection<T>()
                                             .WithAsyncProcessing((context, injected, token) =>
-                                            {
-                                                using (injected.Tracee.Scope(typeof(T).GetName()))
-                                                {
-                                                    return processing(injected.Injected, context, token);
-                                                }
-                                            });
+                                                processing(injected, context, token));
 
                                         return command;
                                     })))
                             .WithDisplayName(typeof(T).GetName())
-                            .Build<TraceeDiContainer<T>>(sp)));
+                            .Build<T>(sp)));
     }
 
     private static IServiceCollection AddCallbackData<T>(
@@ -186,19 +165,14 @@ public static class TelegramFlowExtensions
                                     foreach (var targetCommand in targetCommands) data.ForExact(targetCommand);
 
                                     data = data
-                                        .WithInjection<TraceeDiContainer<T>>()
+                                        .WithInjection<T>()
                                         .WithAsyncProcessing((context, injected, token) =>
-                                        {
-                                            using (injected.Tracee.Scope(typeof(T).GetName()))
-                                            {
-                                                return processing(injected.Injected, context, token);
-                                            }
-                                        });
+                                            processing(injected, context, token));
 
                                     return data;
                                 }))
                             .WithDisplayName(typeof(T).GetName())
-                            .Build<TraceeDiContainer<T>>(sp)));
+                            .Build<T>(sp)));
     }
 
     private static IServiceCollection AddCallbackDataPrefix<T>(
@@ -218,19 +192,14 @@ public static class TelegramFlowExtensions
                                     foreach (var targetPrefix in targetPrefixes) data.ForPrefix(targetPrefix);
 
                                     data = data
-                                        .WithInjection<TraceeDiContainer<T>>()
+                                        .WithInjection<T>()
                                         .WithAsyncProcessing((context, injected, token) =>
-                                        {
-                                            using (injected.Tracee.Scope(typeof(T).GetName()))
-                                            {
-                                                return processing(injected.Injected, context, token);
-                                            }
-                                        });
+                                            processing(injected, context, token));
 
                                     return data;
                                 }))
                             .WithDisplayName(typeof(T).GetName())
-                            .Build<TraceeDiContainer<T>>(sp)));
+                            .Build<T>(sp)));
     }
 
     private static IServiceCollection AddPreHandler(this IServiceCollection services)
@@ -242,42 +211,28 @@ public static class TelegramFlowExtensions
                         TelegramFlow.New
                             .ForMessage(message => message
                                 .ForText(text => text
-                                    .WithInjection<TraceeDiContainer<ITelegramBotClient>>()
+                                    .WithInjection<ITelegramBotClient>()
                                     .WithAsyncProcessing((context, injected, token) =>
-                                    {
-                                        using (injected.Tracee.Scope($"{nameof(PreHandler)}"))
-                                        {
-                                            return injected.Injected.SendChatActionAsync(
-                                                context.Message.From!.Id,
-                                                ChatAction.Typing,
-                                                cancellationToken: token);
-                                        }
-                                    })))
+                                        injected.SendChatActionAsync(
+                                            context.Message.From!.Id,
+                                            ChatAction.Typing,
+                                            cancellationToken: token))))
                             .ForCallbackQuery(callbackQuery => callbackQuery
-                                .WithInjection<TraceeDiContainer<ITelegramBotClient>>()
+                                .WithInjection<ITelegramBotClient>()
                                 .WithAsyncProcessing((context, injected, token) =>
-                                {
-                                    using (injected.Tracee.Scope($"{nameof(PreHandler)}"))
-                                    {
-                                        return injected.Injected.AnswerCallbackQueryAsync(
-                                            context.CallbackQuery.Id,
-                                            cancellationToken: token);
-                                    }
-                                }))
+                                    injected.AnswerCallbackQueryAsync(
+                                        context.CallbackQuery.Id,
+                                        cancellationToken: token)))
                             .ForEditedMessage(message => message
                                 .ForText(text => text
-                                    .WithInjection<TraceeDiContainer<ITelegramBotClient>>()
+                                    .WithInjection<ITelegramBotClient>()
                                     .WithAsyncProcessing((context, injected, token) =>
-                                    {
-                                        using (injected.Tracee.Scope($"{nameof(PreHandler)}"))
-                                        {
-                                            return injected.Injected.SendChatActionAsync(
-                                                context.EditedMessage.From!.Id,
-                                                ChatAction.Typing,
-                                                cancellationToken: token);
-                                        }
-                                    })))
-                            .Build<TraceeDiContainer<ITelegramBotClient>>(sp))));
+                                        injected.SendChatActionAsync(
+                                            context.EditedMessage.From!.Id,
+                                            ChatAction.Typing,
+                                            cancellationToken: token))))
+                            .Build<ITelegramBotClient>(sp),
+                        sp.GetRequiredService<ITracee>())));
     }
 
     public static IServiceCollection AddTelegramFlowNewInterface(this IServiceCollection services)
@@ -336,7 +291,9 @@ public static class TelegramFlowExtensions
                             .WithInjection<ITracee>()
                             .WithAsyncProcessing((context, tracee, _) =>
                             {
-                                tracee.Log(LogLevel.Debug, $"MSG {context.Message.From!.Id} {context.Text}");
+                                tracee.Log(
+                                    LogLevel.Debug,
+                                    $"MSG {context.Message.From!.Id} {context.Text}");
                                 return Task.CompletedTask;
                             }))
                     )
@@ -345,7 +302,9 @@ public static class TelegramFlowExtensions
                             .WithInjection<ITracee>()
                             .WithAsyncProcessing((context, tracee, _) =>
                             {
-                                tracee.Log(LogLevel.Debug, $"EDT {context.EditedMessage.From!.Id} {context.Text}");
+                                tracee.Log(
+                                    LogLevel.Debug,
+                                    $"EDT {context.EditedMessage.From!.Id} {context.Text}");
                                 return Task.CompletedTask;
                             })))
                     .ForCallbackQuery(callbackQuery => callbackQuery
@@ -354,7 +313,9 @@ public static class TelegramFlowExtensions
                             .WithInjection<ITracee>()
                             .WithAsyncProcessing((context, tracee, _) =>
                             {
-                                tracee.Log(LogLevel.Debug, $"CLB {context.CallbackQuery.From!.Id} {context.Data}");
+                                tracee.Log(
+                                    LogLevel.Debug,
+                                    $"CLB {context.CallbackQuery.From.Id} {context.Data}");
                                 return Task.CompletedTask;
                             })))
                     .WithDisplayName("FullLogging")
@@ -365,23 +326,10 @@ public static class TelegramFlowExtensions
         this IServiceProvider serviceProvider,
         Func<IServiceProvider, T> builder) where T : class
     {
-        using (serviceProvider.GetRequiredService<ITracee>().Scope("telegram_flow_init"))
+        using (serviceProvider.GetRequiredService<ITracee>().Scoped($"init_{typeof(T).GetName()}"))
         {
             var service = builder(serviceProvider);
             return service;
         }
-    }
-
-    private static IServiceCollection AddTraceeDiContainer(this IServiceCollection services)
-    {
-        return services
-            .AddTransient(typeof(TraceeDiContainer<>));
-    }
-
-    internal class TraceeDiContainer<T>(ITracee tracee, T injected)
-    {
-        internal ITracee Tracee => tracee;
-
-        internal T Injected => injected;
     }
 }

@@ -61,7 +61,7 @@ public sealed partial class ApplicationDbContext : DbContext, ICommonDbContext<A
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        using (_tracee.Scope("save"))
+        using (_tracee.Scoped("save_db"))
         {
             return base.SaveChangesAsync(cancellationToken);
         }

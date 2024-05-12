@@ -7,13 +7,15 @@ using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.TelegramBotClientWrapper;
+using Tracee;
 
 namespace TelegramBudget.Services.TelegramApi.NewHandlers;
 
 public class NewHistoryHandler(
     ITelegramBotClientWrapper botWrapper,
     ICurrentUserService currentUserService,
-    ApplicationDbContext db) : ICallbackQueryHandler
+    ApplicationDbContext db,
+    ITracee tracee) : ICallbackQueryHandler
 {
     public const string Command = "history";
     public const string CommandPrefix = "history.";
@@ -23,16 +25,19 @@ public class NewHistoryHandler(
         string data,
         CancellationToken cancellationToken)
     {
-        var (budgetId, requestedPageNumber) = ParseArguments(data);
-        var (activeBudgetId, timeZone) = await GetUserDataAsync(cancellationToken);
+        using var trace = tracee.Scoped("history");
+        var (budgetId, requestedPageNumber) = ParseArguments(trace, data);
+        var (activeBudgetId, timeZone) = await GetUserDataAsync(trace, cancellationToken);
 
         var (text, budgetSlug, pageNumber, pageCount) = await PrepareReplyAsync(
+            trace,
             budgetId ?? activeBudgetId,
             requestedPageNumber,
             timeZone,
             cancellationToken);
 
         await SubmitReplyAsync(
+            trace,
             messageId,
             text,
             budgetSlug,
@@ -41,8 +46,11 @@ public class NewHistoryHandler(
             cancellationToken);
     }
 
-    private static (Guid? budgetId, int pageNumber) ParseArguments(string data)
+    private static (Guid? budgetId, int pageNumber) ParseArguments(
+        ITracee trace,
+        string data)
     {
+        using var scope = trace.Scoped("parse");
         var arguments = data.Split('.').Skip(1).ToArray();
 
         if (arguments.Length < 2) return (null, 1);
@@ -53,8 +61,11 @@ public class NewHistoryHandler(
         return (budgetId, pageNumber);
     }
 
-    private async Task<(Guid? ActiveBudgetId, TimeSpan TimeZone)> GetUserDataAsync(CancellationToken cancellationToken)
+    private async Task<(Guid? ActiveBudgetId, TimeSpan TimeZone)> GetUserDataAsync(
+        ITracee trace,
+        CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("get_user");
         var data = await db.Users
             .Where(e => e.Id == currentUserService.TelegramUser.Id)
             .Select(e => new
@@ -68,20 +79,26 @@ public class NewHistoryHandler(
     }
 
     private async Task<(string Text, string? BudgetSlug, int PageNumber, int PageCount)> PrepareReplyAsync(
+        ITracee trace,
         Guid? budgetId,
         int pageNumber,
         TimeSpan timeZone,
         CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("prepare");
         if (!budgetId.HasValue ||
-            await GetBudgetNameAsync(budgetId.Value, cancellationToken) is not { } budgetName)
+            await GetBudgetNameAsync(scope, budgetId.Value, cancellationToken) is not { } budgetName)
             return (TR.L + "_HISTORY_NO_BUDGET", null, 0, 0);
 
-        var transactions = await GetTransactionsReversedAsync(budgetId.Value, cancellationToken);
+        var transactions = await GetTransactionsReversedAsync(
+            scope,
+            budgetId.Value,
+            cancellationToken);
         if (transactions.Count == 0)
             return (string.Format(TR.L + "_HISTORY_NO_TRANSACTIONS", budgetName.EscapeHtml()), null, 0, 0);
 
         var pageContent = BuildPageContent(
+            scope,
             pageNumber,
             budgetName,
             transactions,
@@ -94,8 +111,12 @@ public class NewHistoryHandler(
         return (pageContent, $"{budgetId:N}", actualPageNumber, actualPageCount);
     }
 
-    private Task<string?> GetBudgetNameAsync(Guid budgetId, CancellationToken cancellationToken)
+    private Task<string?> GetBudgetNameAsync(
+        ITracee trace,
+        Guid budgetId,
+        CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("get_budget");
         return db.Budgets
             .Where(e => e.Id == budgetId)
             .Select(e => e.Name)
@@ -110,8 +131,12 @@ public class NewHistoryHandler(
             DateTime CreatedAt,
             long AuthorId,
             string AuthorName)>
-    > GetTransactionsReversedAsync(Guid budgetId, CancellationToken cancellationToken)
+    > GetTransactionsReversedAsync(
+        ITracee trace,
+        Guid budgetId,
+        CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("get_transactions");
         var data = await db.Transactions
             .Where(e => e.BudgetId == budgetId)
             .Include(e => e.Author)
@@ -144,6 +169,7 @@ public class NewHistoryHandler(
     }
 
     private static string? BuildPageContent(
+        ITracee trace,
         int requestedPageNumber,
         string budgetName,
         IEnumerable<(
@@ -157,6 +183,7 @@ public class NewHistoryHandler(
         out int actualPageNumber,
         out int actualPageCount)
     {
+        using var scope = trace.Scoped("build_page");
         var pageContent = transactions
             .CreatePage(
                 768,
@@ -202,6 +229,7 @@ public class NewHistoryHandler(
     }
 
     private Task<Message> SubmitReplyAsync(
+        ITracee trace,
         int messageId,
         string text,
         string? budgetSlug,
@@ -209,7 +237,9 @@ public class NewHistoryHandler(
         int pageCount,
         CancellationToken cancellationToken)
     {
+        using var scope = trace.Scoped("submit");
         var keyboard = GetKeyboard(
+            scope,
             budgetSlug,
             pageNumber,
             pageCount);
@@ -225,10 +255,12 @@ public class NewHistoryHandler(
     }
 
     private static InlineKeyboardMarkup GetKeyboard(
+        ITracee trace,
         string? budgetSlug,
         int actualPageNumber,
         int actualPageCount)
     {
+        using var scope = trace.Scoped("get_keyboard");
         return new InlineKeyboardMarkup(
             Keyboards.BuildPaginationInlineButtons(
                     actualPageNumber,

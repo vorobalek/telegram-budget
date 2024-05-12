@@ -91,7 +91,7 @@ var host = Host
 
         builder.Configure(app =>
         {
-            app.UseTracee();
+            app.UseTracee(logLevel: LogLevel.Debug);
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
             app.UseWhen(

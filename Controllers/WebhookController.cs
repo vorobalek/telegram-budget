@@ -17,7 +17,7 @@ public class WebhookController(
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Update update)
     {
-        using (tracee.Scope("ctrl"))
+        using (tracee.Scoped("controller"))
         {
             currentUserService.TelegramUser = update.GetUser();
             await telegramApiService.HandleUpdateAsync(update, cancellationTokenSource.Token);

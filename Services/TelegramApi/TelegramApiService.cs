@@ -21,36 +21,36 @@ internal sealed class TelegramApiService(
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        using (tracee.Scope("auth"))
-        {
-            await using var transaction = await db.Database
-                .BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
+        using var scope = tracee.Scoped("api");
 
-            if (await GetUserAsync(cancellationToken) is not { } user) user = await CreateUserAsync(cancellationToken);
+        await using var transaction = await db.Database
+            .BeginTransactionAsync(IsolationLevel.Snapshot, cancellationToken);
 
-            if (TelegramBotConfiguration.IsUserAuthorizationEnabled && !await IsUserAuthorizedAsync(cancellationToken))
-                return;
+        if (await GetUserAsync(scope, cancellationToken) is not { } user)
+            user = await CreateUserAsync(scope, cancellationToken);
 
-            await UpdateUserAsync(user, cancellationToken);
+        if (TelegramBotConfiguration.IsUserAuthorizationEnabled &&
+            !await IsUserAuthorizedAsync(scope, cancellationToken))
+            return;
 
-            await transaction.CommitAsync(cancellationToken);
-        }
+        await UpdateUserAsync(scope, user, cancellationToken);
 
-        using (tracee.Scope("proc"))
-        {
-            await ProcessUpdateAsync(update, cancellationToken);
-        }
+        await transaction.CommitAsync(cancellationToken);
+
+        await ProcessUpdateAsync(scope, update, cancellationToken);
     }
 
-    private async Task<User?> GetUserAsync(CancellationToken cancellationToken)
+    private async Task<User?> GetUserAsync(ITracee trace, CancellationToken cancellationToken)
     {
+        using var subScope = trace.Scoped("get_user");
         return await db.Users.SingleOrDefaultAsync(
             user => user.Id == currentUserService.TelegramUser.Id,
             cancellationToken);
     }
 
-    private async Task<User> CreateUserAsync(CancellationToken cancellationToken)
+    private async Task<User> CreateUserAsync(ITracee trace, CancellationToken cancellationToken)
     {
+        using var subScope = trace.Scoped("create_user");
         var user = new User
         {
             Id = currentUserService.TelegramUser.Id,
@@ -62,22 +62,31 @@ internal sealed class TelegramApiService(
         return user;
     }
 
-    private async Task UpdateUserAsync(User user, CancellationToken cancellationToken)
+    private async Task UpdateUserAsync(ITracee trace, User user, CancellationToken cancellationToken)
     {
+        using var subScope = trace.Scoped("update_user");
         user.FirstName = currentUserService.TelegramUser.FirstName;
         user.LastName = currentUserService.TelegramUser.LastName;
         db.Update(user);
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private Task<bool> IsUserAuthorizedAsync(CancellationToken cancellationToken)
+    private Task<bool> IsUserAuthorizedAsync(ITracee trace, CancellationToken cancellationToken)
     {
+        using var subScope = trace.Scoped("auth_user");
         return Task.FromResult(TelegramBotConfiguration.AuthorizedUserIds.Contains(currentUserService.TelegramUser.Id));
     }
 
-    private async Task ProcessUpdateAsync(Update update, CancellationToken cancellationToken)
+    private async Task ProcessUpdateAsync(ITracee trace, Update update, CancellationToken cancellationToken)
     {
-        await preHandlerService.PreHandleAsync(update, cancellationToken);
-        await Task.WhenAll(handlers.Select(handler => handler.ProcessAsync(update, cancellationToken)));
+        using (trace.Scoped("prehandle"))
+        {
+            await preHandlerService.PreHandleAsync(update, cancellationToken);
+        }
+
+        using (trace.Scoped("handle"))
+        {
+            await Task.WhenAll(handlers.Select(handler => handler.ProcessAsync(update, cancellationToken)));
+        }
     }
 }
