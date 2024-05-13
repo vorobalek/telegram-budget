@@ -91,7 +91,12 @@ var host = Host
 
         builder.Configure(app =>
         {
-            app.UseTracee(logLevel: LogLevel.Debug);
+            app.UseTracee(postRequestAsync:
+                tracee =>
+                {
+                    tracee.CollectAll(LogLevel.Debug);
+                    return Task.CompletedTask;
+                });
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
             app.UseWhen(
