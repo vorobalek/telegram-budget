@@ -222,10 +222,16 @@ public static class TelegramFlowExtensions
                                                 cancellationToken: token))))
                                 .ForCallbackQuery(callbackQuery => callbackQuery
                                     .WithInjection(sp.GetRequiredService<ITelegramBotClient>())
-                                    .WithAsyncProcessing((context, injected, token) =>
-                                        injected.AnswerCallbackQueryAsync(
+                                    .WithAsyncProcessing(async (context, injected, token) =>
+                                    {
+                                        string[] notImplementedCommands = [ NewDelete.Command, NewGrant.Command ];
+                                        if (notImplementedCommands.Any(e =>
+                                                context.CallbackQuery.Data?.StartsWith(e) ?? false))
+                                            return;
+                                        await injected.AnswerCallbackQueryAsync(
                                             context.CallbackQuery.Id,
-                                            cancellationToken: token)))
+                                            cancellationToken: token);
+                                    }))
                                 .ForEditedMessage(message => message
                                     .ForText(text => text
                                         .WithInjection(sp.GetRequiredService<ITelegramBotClient>())
@@ -272,13 +278,16 @@ public static class TelegramFlowExtensions
             .EnableFullLogging()
             .AddUserPrompt()
             .AddNewBotCommand<NewMain>(NewMain.Command)
-            .AddNewCallbackData<NewMain>(NewMain.Command)
+            .AddNewCallbackData<NewMain>(NewMain.Command, NewMain.CommandShow)
             .AddNewCallbackData<NewHistory>(NewHistory.Command)
             .AddNewCallbackDataPrefix<NewHistory>(NewHistory.CommandPrefix)
             .AddNewCallbackData<NewSwitch>(NewSwitch.Command)
             .AddNewCallbackDataPrefix<NewSwitch>(NewSwitch.CommandPrefix)
             .AddNewCallbackData<NewCreate>(NewCreate.Command)
-            .AddNewBotCommand<NewCancel>(NewCancel.Command);
+            .AddNewBotCommand<NewCancel>(NewCancel.Command)
+            .AddNewCallbackData<NewGrant>(NewGrant.Command)
+            .AddNewCallbackData<NewDelete>(NewDelete.Command)
+            .AddNewCallbackDataPrefix<NewDelete>(NewDelete.CommandPrefix);
     }
 
     private static IServiceCollection AddNewBotCommand<T>(
@@ -286,8 +295,8 @@ public static class TelegramFlowExtensions
         params string[] targetCommands) where T : class, IBotCommandFlow
     {
         return services
-            .AddBotCommand<T>((command, context, token) =>
-                    command.ProcessAsync(context.Data, token),
+            .AddBotCommand<T>((flow, context, token) =>
+                    flow.ProcessAsync(context, token),
                 targetCommands);
     }
 
@@ -296,9 +305,9 @@ public static class TelegramFlowExtensions
         params string[] targetCommands) where T : class, ICallbackQueryFlow
     {
         return services
-            .AddCallbackData<T>((command, context, token) =>
-                    context.CallbackQuery.Message?.MessageId is { } messageId
-                        ? command.ProcessAsync(messageId, context.Data, token)
+            .AddCallbackData<T>((flow, context, token) =>
+                    context.CallbackQuery.Message?.MessageId is not null
+                        ? flow.ProcessAsync(context, token)
                         : Task.CompletedTask,
                 targetCommands);
     }
@@ -308,9 +317,9 @@ public static class TelegramFlowExtensions
         params string[] targetCommands) where T : class, ICallbackQueryFlow
     {
         return services
-            .AddCallbackDataPrefix<T>((command, context, token) =>
-                    context.CallbackQuery.Message?.MessageId is { } messageId
-                        ? command.ProcessAsync(messageId, context.Data, token)
+            .AddCallbackDataPrefix<T>((flow, context, token) =>
+                    context.CallbackQuery.Message?.MessageId is not null
+                        ? flow.ProcessAsync(context, token)
                         : Task.CompletedTask,
                 targetCommands);
     }

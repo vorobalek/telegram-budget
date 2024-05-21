@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Flow.Updates.CallbackQueries.Data;
 using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
@@ -19,14 +20,12 @@ internal sealed class NewHistory(
     public const string Command = "history";
     public const string CommandPrefix = "history.";
 
-    public async Task ProcessAsync(
-        int messageId,
-        string data,
+    public async Task ProcessAsync(IDataContext context,
         CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("history");
         
-        var (budgetId, requestedPageNumber) = ParseArguments(data);
+        var (budgetId, requestedPageNumber) = ParseArguments(context.Data);
         var (activeBudgetId, timeZone) = await GetUserDataAsync(cancellationToken);
 
         var (text, budgetSlug, pageNumber, pageCount) = await PrepareReplyAsync(
@@ -36,7 +35,7 @@ internal sealed class NewHistory(
             cancellationToken);
 
         await SubmitReplyAsync(
-            messageId,
+            context.CallbackQuery.Message!.MessageId,
             text,
             budgetSlug,
             pageNumber,

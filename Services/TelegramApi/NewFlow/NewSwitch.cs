@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Flow.Updates.CallbackQueries.Data;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
@@ -21,20 +22,19 @@ internal sealed class NewSwitch(
     public const string CommandPrefix = "switch.";
 
     public async Task ProcessAsync(
-        int messageId,
-        string data,
+        IDataContext context,
         CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("switch");
         
-        var budgetId = ParseArguments(data);
+        var budgetId = ParseArguments(context.Data);
 
         var (text, availableBudgets) = await PrepareReplyAsync(
             budgetId,
             cancellationToken);
 
         await SubmitReplyAsync(
-            messageId,
+            context.CallbackQuery.Message!.MessageId,
             text,
             availableBudgets,
             cancellationToken);
@@ -149,6 +149,7 @@ internal sealed class NewSwitch(
                 e.Name,
                 Sum = e.Transactions.Select(transaction => transaction.Amount).Sum()
             })
+            .OrderBy(e => e.Name)
             .ToArrayAsync(cancellationToken);
 
         return data.Select(e => (e.Id, e.Name, e.Sum)).ToArray();
@@ -166,16 +167,15 @@ internal sealed class NewSwitch(
         {
             await Task.WhenAll(
                 botWrapper
-                    .SendTextMessageAsync(
+                    .EditMessageTextAsync(
                         currentUserService.TelegramUser.Id,
+                        messageId,
                         text,
                         parseMode: ParseMode.Html,
-                        replyMarkup: Keyboards.BackToMainInline,
                         cancellationToken: cancellationToken),
                 mainFlow
                     .ProcessAsync(
-                        cancellationToken,
-                        messageId));
+                        cancellationToken));
             return;
         }
 
@@ -191,21 +191,21 @@ internal sealed class NewSwitch(
                 cancellationToken: cancellationToken);
     }
 
-    private InlineKeyboardMarkup GetKeyboard(
+    private static InlineKeyboardMarkup GetKeyboard(
         ICollection<(Guid Id, string Name, decimal Sum)> availableBudgets)
     {
-        return new InlineKeyboardMarkup(new List<IEnumerable<InlineKeyboardButton>>(
-                [[Keyboards.CreateBudgetInlineButton]])
-            .Concat(
-                Keyboards.BuildSelectItemInlineButtons(
-                    availableBudgets,
-                    item =>
-                        string.Format(
-                            TR.L + "_SWITCH_CHOOSE_BUDGET_BTN",
-                            item.Name.Truncate(32),
-                            item.Sum),
-                    item => $"{CommandPrefix}{item.Id:N}"))
-            .Concat(
-                [[Keyboards.BackToMainInlineButton]]));
+        var buttons = Keyboards.BuildSelectItemInlineButtons(
+            availableBudgets,
+            item =>
+                string.Format(
+                    TR.L + "_BTN_SWITCH_CHOOSE_BUDGET",
+                    item.Name.Truncate(32),
+                    item.Sum),
+            item => $"{CommandPrefix}{item.Id:N}");
+        if (availableBudgets.Count < 19)
+            buttons = buttons.Concat([[Keyboards.CreateInlineButton]]);
+        buttons = buttons.Concat([[Keyboards.BackToMainInlineButton]]);
+
+        return new InlineKeyboardMarkup(buttons);
     }
 }

@@ -21,23 +21,38 @@ public static class Keyboards
     public static readonly InlineKeyboardButton BackToMainInlineButton =
         InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMain.Command);
 
+    public static readonly InlineKeyboardButton ShowMainInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMain.CommandShow);
+
     private static readonly InlineKeyboardButton HistoryInlineButton =
         InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_HISTORY", NewHistory.Command);
 
-    public static readonly InlineKeyboardButton SwitchBudgetInlineButton =
+    public static readonly InlineKeyboardButton SwitchInlineButton =
         InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_SWITCH", NewSwitch.Command);
 
-    public static readonly InlineKeyboardButton CreateBudgetInlineButton =
+    private static readonly InlineKeyboardButton GrantInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_GRANT", NewGrant.Command);
+
+    public static readonly InlineKeyboardButton DeleteInlineButton =
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_DELETE", NewDelete.Command);
+
+    public static readonly InlineKeyboardButton CreateInlineButton =
         InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", NewCreate.Command);
 
     private static readonly InlineKeyboardMarkup ActiveBudgetChosenMainInline =
-        new([[HistoryInlineButton, SwitchBudgetInlineButton]]);
+        new([
+            [HistoryInlineButton, SwitchInlineButton],
+            [GrantInlineButton, DeleteInlineButton]
+        ]);
 
     private static readonly InlineKeyboardMarkup ActiveBudgetNotChosenMainInline =
-        new([[SwitchBudgetInlineButton]]);
+        new([[SwitchInlineButton]]);
 
     public static readonly InlineKeyboardMarkup BackToMainInline =
         new([[BackToMainInlineButton]]);
+
+    public static readonly InlineKeyboardMarkup ShowMainInline =
+        new([[ShowMainInlineButton]]);
 
     public static InlineKeyboardMarkup BuildMainInline(bool hasActiveBudget)
     {

@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.Enums;
+using Telegram.Flow.Updates.CallbackQueries.Data;
+using Telegram.Flow.Updates.Messages.Texts.BotCommands;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
@@ -18,15 +20,29 @@ internal sealed class NewMain(
     IDateTimeProvider dateTime) : IBotCommandFlow, ICallbackQueryFlow
 {
     public const string Command = "start";
+    public const string CommandShow = "start.show";
 
-    public async Task ProcessAsync(string data, CancellationToken cancellationToken)
+    public async Task ProcessAsync(IBotCommandContext context, CancellationToken cancellationToken)
     {
         await ProcessAsync(cancellationToken);
     }
 
-    public async Task ProcessAsync(int messageId, string data, CancellationToken cancellationToken)
+    public async Task ProcessAsync(IDataContext context, CancellationToken cancellationToken)
     {
-        await ProcessAsync(cancellationToken, messageId);
+        await (context.Data switch
+        {
+            Command => ProcessAsync(cancellationToken, context.CallbackQuery.Message!.MessageId),
+            CommandShow => Task.WhenAll(
+                botWrapper.EditMessageTextAsync(
+                    currentUserService.TelegramUser.Id,
+                    context.CallbackQuery.Message!.MessageId,
+                    context.CallbackQuery.Message!.Text!,
+                    entities: context.CallbackQuery.Message!.Entities,
+                    replyMarkup: null,
+                    cancellationToken: cancellationToken),
+                ProcessAsync(cancellationToken)),
+            _ => throw new ArgumentOutOfRangeException(nameof(context.Data), context.Data, null)
+        });
     }
 
     public async Task ProcessAsync(CancellationToken cancellationToken, int? messageId = null)
@@ -200,13 +216,5 @@ internal sealed class NewMain(
                 replyMarkup: Keyboards.BuildMainInline(hasActiveBudget),
                 cancellationToken: cancellationToken
             ));
-    }
-
-    private async Task SubmitReplyAsync(
-        string reply,
-        bool hasActiveBudget,
-        CancellationToken cancellationToken)
-    {
-        using var _ = tracee.Scoped("submit");
     }
 }

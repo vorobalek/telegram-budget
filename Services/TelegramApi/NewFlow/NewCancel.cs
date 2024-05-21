@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.Enums;
+using Telegram.Flow.Updates.Messages.Texts.BotCommands;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Services.CurrentUser;
@@ -16,7 +17,7 @@ internal sealed class NewCancel(
 {
     public const string Command = "cancel";
     
-    public async Task ProcessAsync(string data, CancellationToken cancellationToken)
+    public async Task ProcessAsync(IBotCommandContext context, CancellationToken cancellationToken)
     {
         await ProcessAsync(cancellationToken);
     }

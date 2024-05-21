@@ -1,12 +1,15 @@
 {
   "Localization": {
     "ru": {
-      "_BTN_CREATE": "✍ Создать новый",
+      "_BTN_CREATE": "➕ Создать новый",
+      "_BTN_DELETE": "❎ Удалить",
+      "_BTN_GRANT": "\uD83D\uDD10 Поделиться",
       "_BTN_HISTORY": "\uD83D\uDDC3 История",
       "_BTN_MAIN": "↩\uFE0F На главную",
       "_BTN_MOVE_BACK": "◀\uFE0F Страница {0}",
       "_BTN_MOVE_NEXT": "Страница {0} ▶\uFE0F",
       "_BTN_SWITCH": "\uD83D\uDD0D Переключить",
+      "_BTN_SWITCH_CHOOSE_BUDGET": "{0} ➡\uFE0F {1:0.00}",
       "_CANCEL_DONE_BUDGET_NAME": "✅ <b>Запрос на создание бюджета отменен!</b>",
       "_CANCEL_NOTHING": "❌ <b>Нечего отменять</b>",
       "_CREATE_REQUEST_BUDGET_NAME_ALREADY_EXISTS": "❌ <b>Бюджет с именем &quot;{0}&quot; уже существует</b>\n\n",
@@ -27,11 +30,11 @@
       "_MAIN_TRANSACTION_INTRO": "\n\n\uD83D\uDC40 <b>последние транзакции за сегодня</b>",
       "_MAIN_TRANSACTION_NEGATIVE": "\n➖ <b>{0:0.00}</b>",
       "_MAIN_TRANSACTION_POSITIVE": "\n➕ <b>{0:0.00}</b>",
+      "_NOT_IMPLEMENTED": "❌ Пока не работает!",
       "_OWNER_UNKNOWN": " <i>(владелец неизвестен)</i>",
       "_OWNER_USER": " <i>(владелец – <a href=\"tg://user?id={0}\">{1}</a>)</i>",
       "_OWNER_YOU": " <i>(владелец – Вы)</i>",
       "_SWITCH_ACTIVE_BUDGET": "✅ <b>Вашим активным бюджетом выбран &quot;{0}&quot;</b>",
-      "_SWITCH_CHOOSE_BUDGET_BTN": "{0} ➡\uFE0F {1:0.00}",
       "_SWITCH_CHOOSE_BUDGET": "\uD83D\uDD0D <b>Переключитесь на один из доступных Вам бюджетов или создайте новый.</b>",
       "START_EXAMPLE": "\uD83D\uDCCC <b>/start</b> Главная страница",
       "START": "Главная страница"

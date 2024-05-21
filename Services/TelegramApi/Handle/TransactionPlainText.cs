@@ -83,6 +83,7 @@ internal sealed class TransactionPlainText(
                         ? message.MessageId
                         : null,
                     parseMode: ParseMode.Html,
+                    replyMarkup: Keyboards.ShowMainInline,
                     cancellationToken: cancellationToken);
             await db.TransactionConfirmation.AddAsync(new TransactionConfirmation
             {

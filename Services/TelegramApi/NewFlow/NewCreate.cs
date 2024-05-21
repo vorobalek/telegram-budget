@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Flow.Updates.CallbackQueries.Data;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Extensions;
@@ -17,13 +18,14 @@ internal sealed class NewCreate(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,
-    ITelegramBotWrapper botWrapper) : 
+    ITelegramBotWrapper botWrapper,
+    NewMain mainFlow) : 
     ICallbackQueryFlow,
     IUserPromptFlow
 {
     public const string Command = "create";
 
-    public async Task ProcessAsync(int messageId, string data, CancellationToken cancellationToken)
+    public async Task ProcessAsync(IDataContext context, CancellationToken cancellationToken)
     {
         await ProcessAsync(cancellationToken);
     }
@@ -59,7 +61,7 @@ internal sealed class NewCreate(
                     {
                         InputFieldPlaceholder = TR.L + "_CREATE_REQUEST_BUDGET_NAME_PLACEHOLDER"
                     }
-                    : Keyboards.BackToMainInline,
+                    : null,
                 cancellationToken: cancellationToken);
     }
 
@@ -101,6 +103,7 @@ internal sealed class NewCreate(
                 budgetName.EscapeHtml()),
             false,
             cancellationToken);
+        await mainFlow.ProcessAsync(cancellationToken);
     }
 
     private bool TryGetBudgetName(Update update, out string budgetName)
