@@ -1,4 +1,5 @@
 using Telegram.Bot.Types;
+using TelegramBudget.Services.TelegramApi.NewFlow;
 
 namespace TelegramBudget.Configuration;
 
@@ -25,7 +26,7 @@ public static class TelegramBotConfiguration
     {
         new()
         {
-            Command = "/start",
+            Command = $"{NewMain.Command}",
             Description = TR.L + "START"
         },
         new()
