@@ -58,11 +58,11 @@ internal sealed class NewCreate(
                 text,
                 parseMode: ParseMode.Html,
                 replyMarkup: forceReply
-                    ? new ForceReplyMarkup()
+                    ? new ForceReplyMarkup
                     {
                         InputFieldPlaceholder = TR.L + "_CREATE_REQUEST_BUDGET_NAME_PLACEHOLDER"
                     }
-                    : new ReplyKeyboardRemove(),
+                    : Keyboards.BackToMainInline,
                 cancellationToken: cancellationToken);
     }
 

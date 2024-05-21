@@ -14,7 +14,8 @@ internal sealed class NewSwitch(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,
-    ITelegramBotWrapper botWrapper) : ICallbackQueryFlow
+    ITelegramBotWrapper botWrapper,
+    NewMain mainFlow) : ICallbackQueryFlow
 {
     public const string Command = "switch";
     public const string CommandPrefix = "switch.";
@@ -121,7 +122,8 @@ internal sealed class NewSwitch(
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    private async Task SetActiveBudgetAsync(User user,
+    private async Task SetActiveBudgetAsync(
+        User user,
         Guid budgetId,
         CancellationToken cancellationToken)
     {
@@ -152,13 +154,32 @@ internal sealed class NewSwitch(
         return data.Select(e => (e.Id, e.Name, e.Sum)).ToArray();
     }
 
-    private async Task SubmitReplyAsync(int messageId,
+    private async Task SubmitReplyAsync(
+        int messageId,
         string text,
         ICollection<(Guid Id, string Name, decimal Sum)>? availableBudgets,
         CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("submit");
-        
+
+        if (availableBudgets is null)
+        {
+            await Task.WhenAll(
+                botWrapper
+                    .SendTextMessageAsync(
+                        currentUserService.TelegramUser.Id,
+                        text,
+                        parseMode: ParseMode.Html,
+                        replyMarkup: Keyboards.BackToMainInline,
+                        cancellationToken: cancellationToken),
+                mainFlow
+                    .ProcessAsync(
+                        messageId,
+                        "",
+                        cancellationToken));
+            return;
+        }
+
         var keyboard = GetKeyboard(availableBudgets);
 
         await botWrapper
@@ -172,23 +193,20 @@ internal sealed class NewSwitch(
     }
 
     private InlineKeyboardMarkup GetKeyboard(
-        ICollection<(Guid Id, string Name, decimal Sum)>? availableBudgets)
+        ICollection<(Guid Id, string Name, decimal Sum)> availableBudgets)
     {
-        return new InlineKeyboardMarkup(
-            availableBudgets != null
-                ? new List<IEnumerable<InlineKeyboardButton>>(
-                        [[Keyboards.CreateBudgetInlineButton]])
-                    .Concat(
-                        Keyboards.BuildSelectItemInlineButtons(
-                            availableBudgets,
-                            item =>
-                                string.Format(
-                                    TR.L + "_SWITCH_CHOOSE_BUDGET_BTN",
-                                    item.Name.Truncate(32),
-                                    item.Sum),
-                            item => $"{CommandPrefix}{item.Id:N}"))
-                    .Concat(
-                        [[Keyboards.BackToMainInlineButton]])
-                : [[Keyboards.BackToMainInlineButton]]);
+        return new InlineKeyboardMarkup(new List<IEnumerable<InlineKeyboardButton>>(
+                [[Keyboards.CreateBudgetInlineButton]])
+            .Concat(
+                Keyboards.BuildSelectItemInlineButtons(
+                    availableBudgets,
+                    item =>
+                        string.Format(
+                            TR.L + "_SWITCH_CHOOSE_BUDGET_BTN",
+                            item.Name.Truncate(32),
+                            item.Sum),
+                    item => $"{CommandPrefix}{item.Id:N}"))
+            .Concat(
+                [[Keyboards.BackToMainInlineButton]]));
     }
 }

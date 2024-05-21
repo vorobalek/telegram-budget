@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Services.CurrentUser;
@@ -65,7 +64,7 @@ internal sealed class NewCancel(
                 currentUserService.TelegramUser.Id,
                 text,
                 parseMode: ParseMode.Html,
-                replyMarkup: new ReplyKeyboardRemove(),
+                replyMarkup: Keyboards.BackToMainInline,
                 cancellationToken: cancellationToken);
     }
 }

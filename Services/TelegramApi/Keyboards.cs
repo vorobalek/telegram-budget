@@ -36,6 +36,9 @@ public static class Keyboards
     private static readonly InlineKeyboardMarkup ActiveBudgetNotChosenMainInline =
         new([[SwitchBudgetInlineButton]]);
 
+    public static readonly InlineKeyboardMarkup BackToMainInline =
+        new([[BackToMainInlineButton]]);
+
     public static InlineKeyboardMarkup BuildMainInline(bool hasActiveBudget)
     {
         return hasActiveBudget
