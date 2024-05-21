@@ -174,9 +174,8 @@ internal sealed class NewSwitch(
                         cancellationToken: cancellationToken),
                 mainFlow
                     .ProcessAsync(
-                        messageId,
-                        "",
-                        cancellationToken));
+                        cancellationToken,
+                        messageId));
             return;
         }
 

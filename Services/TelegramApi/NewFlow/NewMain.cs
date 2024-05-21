@@ -19,25 +19,17 @@ internal sealed class NewMain(
 {
     public const string Command = "start";
 
-    public async Task ProcessAsync(string __, CancellationToken cancellationToken)
+    public async Task ProcessAsync(string data, CancellationToken cancellationToken)
     {
-        using var _ = tracee.Scoped("main");
-        
-        var (activeBudgetId, timeZone, userUrl) = await GetUserDataAsync(cancellationToken);
-
-        var text = await PrepareRelyAsync(
-            activeBudgetId,
-            timeZone,
-            userUrl,
-            cancellationToken);
-
-        await SubmitReplyAsync(
-            text,
-            activeBudgetId.HasValue,
-            cancellationToken);
+        await ProcessAsync(cancellationToken);
     }
 
-    public async Task ProcessAsync(int messageId, string __, CancellationToken cancellationToken)
+    public async Task ProcessAsync(int messageId, string data, CancellationToken cancellationToken)
+    {
+        await ProcessAsync(cancellationToken, messageId);
+    }
+
+    public async Task ProcessAsync(CancellationToken cancellationToken, int? messageId = null)
     {
         using var _ = tracee.Scoped("main");
         
@@ -186,21 +178,28 @@ internal sealed class NewMain(
     }
 
     private async Task SubmitReplyAsync(
-        int callbackQueryMessageId,
+        int? callbackQueryMessageId,
         string reply,
         bool hasActiveBudget,
         CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("submit");
-        
-        await botWrapper.EditMessageTextAsync(
-            currentUserService.TelegramUser.Id,
-            text: reply,
-            messageId: callbackQueryMessageId,
-            parseMode: ParseMode.Html,
-            replyMarkup: Keyboards.BuildMainInline(hasActiveBudget),
-            cancellationToken: cancellationToken
-        );
+
+        await (callbackQueryMessageId is null
+            ? botWrapper.SendTextMessageAsync(
+                currentUserService.TelegramUser.Id,
+                reply,
+                parseMode: ParseMode.Html,
+                replyMarkup: Keyboards.BuildMainInline(hasActiveBudget),
+                cancellationToken: cancellationToken)
+            : botWrapper.EditMessageTextAsync(
+                currentUserService.TelegramUser.Id,
+                text: reply,
+                messageId: callbackQueryMessageId.Value,
+                parseMode: ParseMode.Html,
+                replyMarkup: Keyboards.BuildMainInline(hasActiveBudget),
+                cancellationToken: cancellationToken
+            ));
     }
 
     private async Task SubmitReplyAsync(
@@ -209,12 +208,5 @@ internal sealed class NewMain(
         CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("submit");
-        
-        await botWrapper.SendTextMessageAsync(
-            currentUserService.TelegramUser.Id,
-            reply,
-            parseMode: ParseMode.Html,
-            replyMarkup: Keyboards.BuildMainInline(hasActiveBudget),
-            cancellationToken: cancellationToken);
     }
 }

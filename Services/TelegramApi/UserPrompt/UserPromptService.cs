@@ -20,7 +20,7 @@ internal sealed class UserPromptService(
 
         if (IsCancelBotCommand(update))
         {
-            await cancelFlow.ProcessAsync(string.Empty, cancellationToken);
+            await cancelFlow.ProcessAsync(cancellationToken);
         }
         else
         {

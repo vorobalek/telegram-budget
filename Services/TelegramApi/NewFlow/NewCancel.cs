@@ -16,7 +16,12 @@ internal sealed class NewCancel(
 {
     public const string Command = "cancel";
     
-    public async Task ProcessAsync(string __, CancellationToken cancellationToken)
+    public async Task ProcessAsync(string data, CancellationToken cancellationToken)
+    {
+        await ProcessAsync(cancellationToken);
+    }
+
+    public async Task ProcessAsync(CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("cancel");
 
