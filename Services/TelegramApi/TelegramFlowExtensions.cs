@@ -269,6 +269,7 @@ public static class TelegramFlowExtensions
     public static IServiceCollection AddTelegramFlowNewInterface(this IServiceCollection services)
     {
         return services
+            .EnableFullLogging()
             .AddUserPrompt()
             .AddNewBotCommand<NewMain>(NewMain.Command)
             .AddNewCallbackData<NewMain>(NewMain.Command)
@@ -337,6 +338,54 @@ public static class TelegramFlowExtensions
         return services
             .AddScoped<IUserPromptService, UserPromptService>()
             .AddScoped<IUserPromptFlow, NewCreate>();
+    }
+
+    private static IServiceCollection EnableFullLogging(this IServiceCollection services)
+    {
+        return services
+            .AddScoped<IUpdateFlow>(serviceProvider => serviceProvider
+                .WatchServiceProvider(
+                    "init_FullLogging",
+                    sp => TelegramFlow.New
+                        .ForMessage(message => message
+                            .ForText(text => text
+                                .WithInjection(sp.GetRequiredService<ITracee>())
+                                .WithAsyncProcessing((context, tracee, _) =>
+                                {
+                                    tracee.Logger.Log(
+                                        LogLevel.Debug,
+                                        "MSG {FromId} {Text}",
+                                        context.Message.From!.Id,
+                                        context.Text);
+                                    return Task.CompletedTask;
+                                })))
+                        .ForEditedMessage(editedMessage => editedMessage
+                            .ForText(text => text
+                                .WithInjection(sp.GetRequiredService<ITracee>())
+                                .WithAsyncProcessing((context, tracee, _) =>
+                                {
+                                    tracee.Logger.Log(
+                                        LogLevel.Debug,
+                                        "EDT {FromId} {Text}",
+                                        context.EditedMessage.From!.Id,
+                                        context.Text);
+                                    return Task.CompletedTask;
+                                })))
+                        .ForCallbackQuery(callbackQuery => callbackQuery
+                            .ForData(data => data
+                                .ForPrefix("")
+                                .WithInjection(sp.GetRequiredService<ITracee>())
+                                .WithAsyncProcessing((context, tracee, _) =>
+                                {
+                                    tracee.Logger.Log(
+                                        LogLevel.Debug,
+                                        "CLB {FromId} {Data}",
+                                        context.CallbackQuery.From.Id,
+                                        context.Data);
+                                    return Task.CompletedTask;
+                                })))
+                        .WithDisplayName("FullLogging")
+                        .Build()));
     }
 
     private static T WatchServiceProvider<T>(
