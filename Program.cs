@@ -8,6 +8,9 @@ using TelegramBudget.Extensions;
 using TelegramBudget.Middleware;
 using TelegramBudget.Services;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.DateTimeProvider;
+using TelegramBudget.Services.TelegramBotClientWrapper;
+using Tracee.AspNetCore.Extensions;
 
 var host = Host
     .CreateDefaultBuilder(args)
@@ -31,6 +34,8 @@ var host = Host
 
         builder.ConfigureServices((context, services) =>
         {
+            services.AddScoped<ExceptionHandlerMiddleware>();
+            services.AddScoped<SecretTokenValidatorMiddleware>();
             TR.Configure(options =>
             {
                 options.DetermineLanguageCodeDelegate = () => AppConfiguration.Locale;
@@ -43,8 +48,7 @@ var host = Host
                     "missing-translation-keys.txt");
                 options.MissingTranslationKeyOutputDelegate = translationKey =>
                 {
-                    File.AppendAllLines(path,
-                        new[] { translationKey });
+                    File.AppendAllLines(path, [translationKey]);
                 };
 #endif
             });
@@ -65,9 +69,13 @@ var host = Host
 
             services.AddSingleton<GlobalCancellationTokenSource>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ITelegramBotWrapper, TelegramBotWrapper>();
             services.AddTelegramHandlers();
 
             services.AddHttpContextAccessor();
+            services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+
+            services.AddTracee();
         });
 
         builder.ConfigureLogging(logging =>
@@ -83,8 +91,14 @@ var host = Host
 
         builder.Configure(app =>
         {
-            app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseHealthChecks("/health");
+            app.UseTracee(postRequestAsync:
+                tracee =>
+                {
+                    tracee.CollectAll(LogLevel.Debug);
+                    return Task.CompletedTask;
+                });
+            app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseWhen(
                 context => context.Request.Path.StartsWithSegments("/bot"),
                 a => a.UseMiddleware<SecretTokenValidatorMiddleware>());

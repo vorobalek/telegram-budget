@@ -32,22 +32,12 @@ public static class TelegramExtensions
     {
         return services
             .AddTelegramFlow()
+            .AddTelegramFlowNewInterface()
             .AddScoped<ITelegramApiService, TelegramApiService>();
-    }
-
-    private static string GetFullName(this User user)
-    {
-        return $"{user.FirstName.EscapeHtml()}" +
-               $"{(user.LastName is not null
-                   ? " " + user.LastName.EscapeHtml()
-                   : string.Empty)}";
     }
 
     public static string GetFullNameLink(this User user)
     {
-        return "<a href=\"tg://user?id=" +
-               $"{user.Id}\">" +
-               user.GetFullName() +
-               "</a>";
+        return TelegramHelper.GetFullNameLink(user.Id, user.FirstName, user.LastName);
     }
 }

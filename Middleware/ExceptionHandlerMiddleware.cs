@@ -2,9 +2,11 @@ using TelegramBudget.Services.CurrentUser;
 
 namespace TelegramBudget.Middleware;
 
-public class ExceptionHandlerMiddleware(RequestDelegate next)
+internal sealed class ExceptionHandlerMiddleware(ICurrentUserService currentUserService) : IMiddleware
 {
-    public async Task InvokeAsync(HttpContext context, ICurrentUserService currentUserService)
+    public async Task InvokeAsync(
+        HttpContext context,
+        RequestDelegate next)
     {
         context.Request.EnableBuffering();
         using var streamReader = new StreamReader(context.Request.Body);

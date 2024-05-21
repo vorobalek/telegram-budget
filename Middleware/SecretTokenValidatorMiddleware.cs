@@ -2,11 +2,13 @@ using TelegramBudget.Configuration;
 
 namespace TelegramBudget.Middleware;
 
-public class SecretTokenValidatorMiddleware(RequestDelegate next)
+internal sealed class SecretTokenValidatorMiddleware : IMiddleware
 {
     private const string SecretTokenHeader = "X-Telegram-Bot-Api-Secret-Token";
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(
+        HttpContext context,
+        RequestDelegate next)
     {
         var secretToken = context.Request.Headers
             .FirstOrDefault(x => x.Key == SecretTokenHeader)

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Common.Database;
 using Common.Database.Hosts;
 using Common.Database.Services;
@@ -8,21 +9,24 @@ using Newtonsoft.Json;
 
 namespace TelegramBudget.Data.Entities;
 
-public class Transaction :
+public sealed class Transaction :
     Entity<Transaction>,
     IIdTrait<Guid>,
     ICreatedAtTrait,
-    ICreatedByTrait<long>,
+    ICreatedByTrait<long?>,
     IVersionHost<Transaction, Guid, Transaction.Version>
 {
     private User? _author;
     private Budget _budget;
-
     private ICollection<TransactionConfirmation> _confirmations;
 
+    public Guid Id { get; set; }
     public decimal Amount { get; set; }
     public string? Comment { get; set; }
     public int MessageId { get; set; }
+    public Guid BudgetId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public long? CreatedBy { get; set; }
 
     [JsonIgnore]
     public User Author
@@ -30,8 +34,6 @@ public class Transaction :
         get => Lazy(ref _author);
         set => _author = value;
     }
-
-    public Guid BudgetId { get; set; }
 
     [JsonIgnore]
     public Budget Budget
@@ -47,13 +49,8 @@ public class Transaction :
         set => _confirmations = value;
     }
 
-    public DateTime CreatedAt { get; set; }
-    public long CreatedBy { get; set; }
-    public Guid Id { get; set; }
-
-    public sealed class Version : EntityVersion<Transaction, Guid, Version>
-    {
-    }
+    [Table("transaction_version")]
+    public sealed class Version : EntityVersion<Transaction, Guid, Version>;
 
     public sealed class ChangeListener : EntityChangeListener<Transaction>
     {

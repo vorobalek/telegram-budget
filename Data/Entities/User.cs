@@ -8,15 +8,25 @@ using TelegramBudget.Extensions;
 
 namespace TelegramBudget.Data.Entities;
 
-public class User :
+public sealed class User :
     Entity<User>,
     IIdTrait<long>
 {
     private Budget? _activeBudget;
     private ICollection<Budget> _ownedBudgets;
-    private ICollection<Participating> _participating;
+    private ICollection<Participant> _participating;
     private ICollection<TransactionConfirmation> _transactionConfirmations;
     private ICollection<Transaction> _transactions;
+
+    // Telegram Id
+    public long Id { get; set; }
+
+    public string FirstName { get; set; }
+    public string? LastName { get; set; }
+    public TimeSpan TimeZone { get; set; }
+
+    public int? PromptMessageId { get; set; }
+    public UserPromptSubjectType? PromptSubject { get; set; }
 
     [JsonIgnore]
     public ICollection<Transaction> Transactions
@@ -35,7 +45,7 @@ public class User :
     }
 
     [JsonIgnore]
-    public ICollection<Participating> Participating
+    public ICollection<Participant> Participating
     {
         get => Lazy(ref _participating);
         set => _participating = value;
@@ -55,27 +65,9 @@ public class User :
         set => _ownedBudgets = value;
     }
 
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public TimeSpan TimeZone { get; set; }
-
-    // Telegram Id
-    public long Id { get; set; }
-
-    private string GetFullName()
-    {
-        return (FirstName ?? Id.ToString()).EscapeHtml() +
-               (LastName is not null
-                   ? " " + LastName.EscapeHtml()
-                   : string.Empty);
-    }
-
     public string GetFullNameLink()
     {
-        return "<a href=\"tg://user?id=" +
-               $"{Id}\">" +
-               GetFullName() +
-               "</a>";
+        return TelegramHelper.GetFullNameLink(Id, FirstName, LastName);
     }
 
     public sealed class ChangeListener : EntityChangeListener<User>
@@ -85,21 +77,21 @@ public class User :
             base.OnModelCreating(builder);
 
             builder
-                .HasKey(e => e.Id);
-
-            builder
                 .Property(e => e.Id)
                 .ValueGeneratedNever();
+
+            builder.Property(e => e.FirstName);
+            builder.Property(e => e.LastName);
+
+            builder
+                .Property(e => e.TimeZone)
+                .HasDefaultValue(TimeSpan.Zero);
 
             builder
                 .HasOne(e => e.ActiveBudget)
                 .WithMany(e => e.ActiveUsers)
                 .HasForeignKey(e => e.ActiveBudgetId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            builder
-                .Property(e => e.TimeZone)
-                .HasDefaultValue(TimeSpan.Zero);
         }
     }
 }

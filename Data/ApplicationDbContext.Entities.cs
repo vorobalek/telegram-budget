@@ -5,9 +5,9 @@ namespace TelegramBudget.Data;
 
 public partial class ApplicationDbContext
 {
-    public DbSet<User> Users { get; set; }
-    public DbSet<Transaction> Transactions { get; set; }
-    public DbSet<TransactionConfirmation> TransactionConfirmations { get; set; }
-    public DbSet<Budget> Budgets { get; set; }
-    public DbSet<Participating> Participating { get; set; }
+    public DbSet<User> User { get; set; }
+    public DbSet<Transaction> Transaction { get; set; }
+    public DbSet<TransactionConfirmation> TransactionConfirmation { get; set; }
+    public DbSet<Budget> Budget { get; set; }
+    public DbSet<Participant> Participant { get; set; }
 }

@@ -19,7 +19,7 @@ public static class StringExtensions
             : value;
     }
 
-    public static string WithFallbackValue(this string? value, string fallbackValue)
+    public static string WithFallbackValue(this string? value, string fallbackValue = "")
     {
         return string.IsNullOrWhiteSpace(value)
             ? fallbackValue

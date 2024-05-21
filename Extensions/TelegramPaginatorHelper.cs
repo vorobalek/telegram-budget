@@ -12,15 +12,12 @@ public static class TelegramPaginatorHelper
 
     public delegate Task SendPageAsync(string pageContent, CancellationToken cancellationToken);
 
-
-    public static async Task SendPaginatedAsync<T>(
+    public static IEnumerable<string> CreatePaginated<T>(
         this IEnumerable<T> enumerable,
         AppendNewPageHeader appendNewPageHeader,
         CreateCurrentString<T> createCurrentString,
         AppendCurrentString appendCurrentString,
-        SendPageAsync sendPageAsync,
-        int pageSizeLimit,
-        CancellationToken cancellationToken)
+        int pageSizeLimit)
     {
         var pageBuilder = new StringBuilder();
         var temporaryPageBuilder = new StringBuilder();
@@ -47,17 +44,55 @@ public static class TelegramPaginatorHelper
                 continue;
             }
 
-            await sendPageAsync(
-                pageBuilder.ToString(),
-                cancellationToken);
+            yield return pageBuilder.ToString();
 
             pageBuilder.Clear();
             appendNewPageHeader(pageBuilder, ++pageNumber);
             appendCurrentString(pageBuilder, currentString);
         }
 
-        await sendPageAsync(
-            pageBuilder.ToString(),
-            cancellationToken);
+        yield return pageBuilder.ToString();
+    }
+
+    public static async Task SendPaginatedAsync<T>(this IEnumerable<T> enumerable,
+        int pageSizeLimit,
+        AppendNewPageHeader appendNewPageHeader,
+        CreateCurrentString<T> createCurrentString,
+        AppendCurrentString appendCurrentString,
+        SendPageAsync sendPageAsync,
+        CancellationToken cancellationToken)
+    {
+        foreach (var pageContent in CreatePaginated(
+                     enumerable,
+                     appendNewPageHeader,
+                     createCurrentString,
+                     appendCurrentString,
+                     pageSizeLimit))
+            await sendPageAsync(
+                pageContent,
+                cancellationToken);
+    }
+
+    public static string? CreatePage<T>(this IEnumerable<T> enumerable,
+        int pageSizeLimit,
+        int pageNumber,
+        AppendNewPageHeader appendNewPageHeader,
+        CreateCurrentString<T> createCurrentString,
+        AppendCurrentString appendCurrentString,
+        out int actualPageNumber,
+        out int actualPageCount)
+    {
+        var pagesContent = CreatePaginated(
+                enumerable,
+                appendNewPageHeader,
+                createCurrentString,
+                appendCurrentString,
+                pageSizeLimit)
+            .ToArray();
+
+        actualPageCount = pagesContent.Length;
+        actualPageNumber = Math.Min(pageNumber, actualPageCount);
+
+        return actualPageCount == 0 ? null : pagesContent[actualPageNumber - 1];
     }
 }

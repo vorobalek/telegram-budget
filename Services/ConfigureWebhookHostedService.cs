@@ -4,7 +4,7 @@ using TelegramBudget.Configuration;
 
 namespace TelegramBudget.Services;
 
-public class ConfigureWebhookHostedService(
+internal sealed class ConfigureWebhookHostedService(
     ILogger<ConfigureWebhookHostedService> logger,
     IServiceScopeFactory serviceScopeFactory)
     : IHostedService
@@ -28,7 +28,7 @@ public class ConfigureWebhookHostedService(
             cancellationToken: cancellationToken);
         await botClient
             .SetMyCommandsAsync(
-                TelegramBotConfiguration.Commands,
+                TelegramBotConfiguration.DeclaredCommands,
                 cancellationToken: cancellationToken);
     }
 
