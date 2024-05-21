@@ -14,7 +14,8 @@ internal sealed class CancelFlow(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,
-    ITelegramBotWrapper botWrapper) : IBotCommandFlow
+    ITelegramBotWrapper botWrapper,
+    MainFlow mainFlow) : IBotCommandFlow
 {
     public const string Command = "cancel";
     
@@ -30,7 +31,9 @@ internal sealed class CancelFlow(
         var user = await GetUserAsync(cancellationToken);
         var text = PrepareReply(user.PromptSubject);
         await UpdateUserAsync(user, cancellationToken);
-        await SubmitReplyAsync(text, cancellationToken);
+        await Task.WhenAll(
+            SubmitReplyAsync(text, cancellationToken),
+            mainFlow.ProcessAsync(cancellationToken));
     }
 
     private async Task<User> GetUserAsync(CancellationToken cancellationToken)
@@ -71,7 +74,6 @@ internal sealed class CancelFlow(
                 currentUserService.TelegramUser.Id,
                 text,
                 parseMode: ParseMode.Html,
-                replyMarkup: Keyboards.BackToMainInline,
                 cancellationToken: cancellationToken);
     }
 }
