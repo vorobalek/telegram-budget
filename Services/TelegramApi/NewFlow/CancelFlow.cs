@@ -4,12 +4,13 @@ using Telegram.Flow.Updates.Messages.Texts.BotCommands;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 using Tracee;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewCancel(
+internal sealed class CancelFlow(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,

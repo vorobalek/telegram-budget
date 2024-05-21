@@ -7,12 +7,13 @@ using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.DateTimeProvider;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 using Tracee;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewMain(
+internal sealed class MainFlow(
     ITracee tracee,
     ITelegramBotWrapper botWrapper,
     ICurrentUserService currentUserService,

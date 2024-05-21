@@ -7,6 +7,7 @@ using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramApi.UserPrompt;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 using Tracee;
@@ -14,12 +15,12 @@ using User = TelegramBudget.Data.Entities.User;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewCreate(
+internal sealed class CreateFlow(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,
     ITelegramBotWrapper botWrapper,
-    NewMain mainFlow) : 
+    MainFlow mainFlow) : 
     ICallbackQueryFlow,
     IUserPromptFlow
 {

@@ -1,10 +1,11 @@
 using Telegram.Bot;
 using Telegram.Flow.Updates.CallbackQueries.Data;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewDelete(ITelegramBotWrapper botWrapper) : ICallbackQueryFlow
+internal sealed class DeleteFlow(ITelegramBotWrapper botWrapper) : ICallbackQueryFlow
 {
     public const string Command = "delete";
     public const string CommandPrefix = "delete.";

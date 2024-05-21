@@ -8,7 +8,7 @@ namespace TelegramBudget.Services.TelegramApi.UserPrompt;
 
 internal sealed class UserPromptService(
     ITracee tracee,
-    NewCancel cancelFlow,
+    CancelFlow cancelFlow,
     IEnumerable<IUserPromptFlow> promptFlows) : IUserPromptService
 {
     public async Task<bool> ProcessPromptAsync(User user, Update update, CancellationToken cancellationToken)
@@ -34,7 +34,7 @@ internal sealed class UserPromptService(
 
     private static bool IsCancelBotCommand(Update update)
     {
-        const string cancelCommand = $"/{NewCancel.Command}";
+        const string cancelCommand = $"/{CancelFlow.Command}";
         return update is
         {
             Type: UpdateType.Message,

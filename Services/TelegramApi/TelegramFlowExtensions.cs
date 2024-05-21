@@ -8,6 +8,7 @@ using Telegram.Flow.Updates.CallbackQueries.Data;
 using Telegram.Flow.Updates.Messages.Texts.BotCommands;
 using TelegramBudget.Services.TelegramApi.Handle;
 using TelegramBudget.Services.TelegramApi.NewFlow;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramApi.PreHandle;
 using TelegramBudget.Services.TelegramApi.UserPrompt;
 using Tracee;
@@ -224,7 +225,7 @@ public static class TelegramFlowExtensions
                                     .WithInjection(sp.GetRequiredService<ITelegramBotClient>())
                                     .WithAsyncProcessing(async (context, injected, token) =>
                                     {
-                                        string[] notImplementedCommands = [ NewDelete.Command, NewGrant.Command ];
+                                        string[] notImplementedCommands = [ DeleteFlow.Command, GrantFlow.Command ];
                                         if (notImplementedCommands.Any(e =>
                                                 context.CallbackQuery.Data?.StartsWith(e) ?? false))
                                             return;
@@ -277,20 +278,20 @@ public static class TelegramFlowExtensions
         return services
             .EnableFullLogging()
             .AddUserPrompt()
-            .AddNewBotCommand<NewMain>(NewMain.Command)
-            .AddNewCallbackData<NewMain>(NewMain.Command, NewMain.CommandShow)
-            .AddNewCallbackData<NewHistory>(NewHistory.Command)
-            .AddNewCallbackDataPrefix<NewHistory>(NewHistory.CommandPrefix)
-            .AddNewCallbackData<NewSwitch>(NewSwitch.Command)
-            .AddNewCallbackDataPrefix<NewSwitch>(NewSwitch.CommandPrefix)
-            .AddNewCallbackData<NewCreate>(NewCreate.Command)
-            .AddNewBotCommand<NewCancel>(NewCancel.Command)
-            .AddNewCallbackData<NewGrant>(NewGrant.Command)
-            .AddNewCallbackData<NewDelete>(NewDelete.Command)
-            .AddNewCallbackDataPrefix<NewDelete>(NewDelete.CommandPrefix);
+            .AddBotCommandFlow<MainFlow>(MainFlow.Command)
+            .AddCallbackDataFlow<MainFlow>(MainFlow.Command, MainFlow.CommandShow)
+            .AddCallbackDataFlow<HistoryFlow>(HistoryFlow.Command)
+            .AddCallbackDataPrefixFlow<HistoryFlow>(HistoryFlow.CommandPrefix)
+            .AddCallbackDataFlow<SwitchFlow>(SwitchFlow.Command)
+            .AddCallbackDataPrefixFlow<SwitchFlow>(SwitchFlow.CommandPrefix)
+            .AddCallbackDataFlow<CreateFlow>(CreateFlow.Command)
+            .AddBotCommandFlow<CancelFlow>(CancelFlow.Command)
+            .AddCallbackDataFlow<GrantFlow>(GrantFlow.Command)
+            .AddCallbackDataFlow<DeleteFlow>(DeleteFlow.Command)
+            .AddCallbackDataPrefixFlow<DeleteFlow>(DeleteFlow.CommandPrefix);
     }
 
-    private static IServiceCollection AddNewBotCommand<T>(
+    private static IServiceCollection AddBotCommandFlow<T>(
         this IServiceCollection services,
         params string[] targetCommands) where T : class, IBotCommandFlow
     {
@@ -300,7 +301,7 @@ public static class TelegramFlowExtensions
                 targetCommands);
     }
 
-    private static IServiceCollection AddNewCallbackData<T>(
+    private static IServiceCollection AddCallbackDataFlow<T>(
         this IServiceCollection services,
         params string[] targetCommands) where T : class, ICallbackQueryFlow
     {
@@ -312,7 +313,7 @@ public static class TelegramFlowExtensions
                 targetCommands);
     }
 
-    private static IServiceCollection AddNewCallbackDataPrefix<T>(
+    private static IServiceCollection AddCallbackDataPrefixFlow<T>(
         this IServiceCollection services,
         params string[] targetCommands) where T : class, ICallbackQueryFlow
     {
@@ -324,7 +325,7 @@ public static class TelegramFlowExtensions
                 targetCommands);
     }
 
-    private static IServiceCollection AddNewText<T>(this IServiceCollection services) 
+    private static IServiceCollection AddTextFlow<T>(this IServiceCollection services) 
         where T : class, ITextFlow
     {
         return services
@@ -337,7 +338,7 @@ public static class TelegramFlowExtensions
                             .ForText(text => text
                                 .WithInjection(sp.GetRequiredService<T>())
                                 .WithAsyncProcessing((context, injected, token) =>
-                                    injected.ProcessAsync(context.Message, context.Text, token))))
+                                    injected.ProcessAsync(context, token))))
                         .WithDisplayName(typeof(T).GetName())
                         .Build()));
     }
@@ -346,7 +347,7 @@ public static class TelegramFlowExtensions
     {
         return services
             .AddScoped<IUserPromptService, UserPromptService>()
-            .AddScoped<IUserPromptFlow, NewCreate>();
+            .AddScoped<IUserPromptFlow, CreateFlow>();
     }
 
     private static IServiceCollection EnableFullLogging(this IServiceCollection services)

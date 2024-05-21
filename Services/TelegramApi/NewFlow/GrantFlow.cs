@@ -1,10 +1,11 @@
 using Telegram.Bot;
 using Telegram.Flow.Updates.CallbackQueries.Data;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewGrant(ITelegramBotWrapper botWrapper) : ICallbackQueryFlow
+internal sealed class GrantFlow(ITelegramBotWrapper botWrapper) : ICallbackQueryFlow
 {
     public const string Command = "grant";
     public const string CommandPrefix = "grant.";

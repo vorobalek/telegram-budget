@@ -6,12 +6,13 @@ using TelegramBudget.Configuration;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 using Tracee;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewHistory(
+internal sealed class HistoryFlow(
     ITracee tracee,
     ITelegramBotWrapper botWrapper,
     ICurrentUserService currentUserService,

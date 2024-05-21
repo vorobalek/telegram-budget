@@ -5,18 +5,19 @@ using Telegram.Flow.Updates.CallbackQueries.Data;
 using TelegramBudget.Data;
 using TelegramBudget.Extensions;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 using Tracee;
 using User = TelegramBudget.Data.Entities.User;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewSwitch(
+internal sealed class SwitchFlow(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,
     ITelegramBotWrapper botWrapper,
-    NewMain mainFlow) : ICallbackQueryFlow
+    MainFlow mainFlow) : ICallbackQueryFlow
 {
     public const string Command = "switch";
     public const string CommandPrefix = "switch.";

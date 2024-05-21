@@ -19,25 +19,25 @@ public static class Keyboards
         new([[BackToMainInlineButtonOld]]);
 
     public static readonly InlineKeyboardButton BackToMainInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMain.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", MainFlow.Command);
 
     public static readonly InlineKeyboardButton ShowMainInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMain.CommandShow);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", MainFlow.CommandShow);
 
     private static readonly InlineKeyboardButton HistoryInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_HISTORY", NewHistory.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_HISTORY", HistoryFlow.Command);
 
     public static readonly InlineKeyboardButton SwitchInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_SWITCH", NewSwitch.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_SWITCH", SwitchFlow.Command);
 
     private static readonly InlineKeyboardButton GrantInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_GRANT", NewGrant.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_GRANT", GrantFlow.Command);
 
     public static readonly InlineKeyboardButton DeleteInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_DELETE", NewDelete.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_DELETE", DeleteFlow.Command);
 
     public static readonly InlineKeyboardButton CreateInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", NewCreate.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", CreateFlow.Command);
 
     private static readonly InlineKeyboardMarkup ActiveBudgetChosenMainInline =
         new([

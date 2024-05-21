@@ -26,7 +26,7 @@ public static class TelegramBotConfiguration
     {
         new()
         {
-            Command = $"{NewMain.Command}",
+            Command = $"{MainFlow.Command}",
             Description = TR.L + "START"
         },
         new()
