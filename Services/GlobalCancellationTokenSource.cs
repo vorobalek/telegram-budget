@@ -1,6 +1,6 @@
 namespace TelegramBudget.Services;
 
-public class GlobalCancellationTokenSource
+public sealed class GlobalCancellationTokenSource
 {
     private readonly CancellationTokenSource _tokenSource = new();
 

@@ -2,8 +2,7 @@ using TelegramBudget.Services.CurrentUser;
 
 namespace TelegramBudget.Middleware;
 
-public class ExceptionHandlerMiddleware(
-    ICurrentUserService currentUserService) : IMiddleware
+internal sealed class ExceptionHandlerMiddleware(ICurrentUserService currentUserService) : IMiddleware
 {
     public async Task InvokeAsync(
         HttpContext context,

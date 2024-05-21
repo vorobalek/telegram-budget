@@ -7,15 +7,17 @@ using Newtonsoft.Json;
 
 namespace TelegramBudget.Data.Entities;
 
-public class TransactionConfirmation :
+public sealed class TransactionConfirmation :
     Entity<TransactionConfirmation>,
     IIdTrait<Guid>,
     ICreatedAtTrait
 {
     private User _recipient;
-
     private Transaction _transaction;
 
+    public Guid Id { get; set; }
+    public int MessageId { get; set; }
+    public DateTime CreatedAt { get; set; }
     public Guid TransactionId { get; set; }
 
     [JsonIgnore]
@@ -33,10 +35,6 @@ public class TransactionConfirmation :
         get => Lazy(ref _recipient);
         set => _recipient = value;
     }
-
-    public int MessageId { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public Guid Id { get; set; }
 
     public sealed class ChangeListener : EntityChangeListener<TransactionConfirmation>
     {

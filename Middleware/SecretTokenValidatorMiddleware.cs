@@ -2,7 +2,7 @@ using TelegramBudget.Configuration;
 
 namespace TelegramBudget.Middleware;
 
-public class SecretTokenValidatorMiddleware : IMiddleware
+internal sealed class SecretTokenValidatorMiddleware : IMiddleware
 {
     private const string SecretTokenHeader = "X-Telegram-Bot-Api-Secret-Token";
 

@@ -8,7 +8,7 @@ using Tracee;
 
 namespace TelegramBudget.Controllers;
 
-public class WebhookController(
+public sealed class WebhookController(
     ITelegramApiService telegramApiService,
     ICurrentUserService currentUserService,
     GlobalCancellationTokenSource cancellationTokenSource,

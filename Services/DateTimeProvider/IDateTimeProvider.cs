@@ -1,6 +1,6 @@
 namespace TelegramBudget.Services.DateTimeProvider;
 
-public interface IDateTimeProvider
+internal interface IDateTimeProvider
 {
     DateTimeOffset UtcNow();
 }

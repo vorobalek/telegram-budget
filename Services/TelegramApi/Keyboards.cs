@@ -1,5 +1,5 @@
 using Telegram.Bot.Types.ReplyMarkups;
-using TelegramBudget.Services.TelegramApi.NewHandlers;
+using TelegramBudget.Services.TelegramApi.NewFlow;
 
 namespace TelegramBudget.Services.TelegramApi;
 
@@ -19,16 +19,16 @@ public static class Keyboards
         new([[BackToMainInlineButtonOld]]);
 
     public static readonly InlineKeyboardButton BackToMainInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMainHandler.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_MAIN", NewMain.Command);
 
     private static readonly InlineKeyboardButton HistoryInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_HISTORY", NewHistoryHandler.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_HISTORY", NewHistory.Command);
 
     public static readonly InlineKeyboardButton SwitchBudgetInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_SWITCH", NewSwitchHandler.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_SWITCH", NewSwitch.Command);
 
     public static readonly InlineKeyboardButton CreateBudgetInlineButton =
-        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", NewCreateHandler.Command);
+        InlineKeyboardButton.WithCallbackData(TR.L + "_BTN_CREATE", NewCreate.Command);
 
     private static readonly InlineKeyboardMarkup ActiveBudgetChosenMainInline =
         new([[HistoryInlineButton, SwitchBudgetInlineButton]]);

@@ -17,7 +17,7 @@ namespace TelegramBudget.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.3")
+                .HasAnnotation("ProductVersion", "8.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -43,22 +43,22 @@ namespace TelegramBudget.Migrations
                     b.HasIndex("Name", "CreatedBy")
                         .IsUnique();
 
-                    b.ToTable("Budgets");
+                    b.ToTable("Budget", (string)null);
                 });
 
-            modelBuilder.Entity("TelegramBudget.Data.Entities.Participating", b =>
+            modelBuilder.Entity("TelegramBudget.Data.Entities.Participant", b =>
                 {
-                    b.Property<long>("ParticipantId")
+                    b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
                     b.Property<Guid>("BudgetId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("ParticipantId", "BudgetId");
+                    b.HasKey("UserId", "BudgetId");
 
                     b.HasIndex("BudgetId");
 
-                    b.ToTable("Participating");
+                    b.ToTable("Participant", (string)null);
                 });
 
             modelBuilder.Entity("TelegramBudget.Data.Entities.Transaction", b =>
@@ -80,7 +80,7 @@ namespace TelegramBudget.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<long>("CreatedBy")
+                    b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint");
 
                     b.Property<int>("MessageId")
@@ -97,7 +97,7 @@ namespace TelegramBudget.Migrations
                     b.HasIndex("CreatedBy", "MessageId")
                         .IsUnique();
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transaction", (string)null);
                 });
 
             modelBuilder.Entity("TelegramBudget.Data.Entities.Transaction+Version", b =>
@@ -128,7 +128,7 @@ namespace TelegramBudget.Migrations
 
                     b.HasIndex("EntityId");
 
-                    b.ToTable("Transactions_Versions", (string)null);
+                    b.ToTable("Transaction_Versions", (string)null);
                 });
 
             modelBuilder.Entity("TelegramBudget.Data.Entities.TransactionConfirmation", b =>
@@ -160,7 +160,7 @@ namespace TelegramBudget.Migrations
                     b.HasIndex("MessageId", "RecipientId")
                         .IsUnique();
 
-                    b.ToTable("TransactionConfirmations");
+                    b.ToTable("TransactionConfirmation", (string)null);
                 });
 
             modelBuilder.Entity("TelegramBudget.Data.Entities.User", b =>
@@ -178,6 +178,12 @@ namespace TelegramBudget.Migrations
                     b.Property<string>("LastName")
                         .HasColumnType("text");
 
+                    b.Property<int?>("PromptMessageId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PromptSubject")
+                        .HasColumnType("integer");
+
                     b.Property<TimeSpan>("TimeZone")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("interval")
@@ -187,7 +193,7 @@ namespace TelegramBudget.Migrations
 
                     b.HasIndex("ActiveBudgetId");
 
-                    b.ToTable("Users");
+                    b.ToTable("User", (string)null);
                 });
 
             modelBuilder.Entity("TelegramBudget.Data.Entities.Budget", b =>
@@ -200,7 +206,7 @@ namespace TelegramBudget.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("TelegramBudget.Data.Entities.Participating", b =>
+            modelBuilder.Entity("TelegramBudget.Data.Entities.Participant", b =>
                 {
                     b.HasOne("TelegramBudget.Data.Entities.Budget", "Budget")
                         .WithMany("Participating")
@@ -208,15 +214,15 @@ namespace TelegramBudget.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TelegramBudget.Data.Entities.User", "Participant")
+                    b.HasOne("TelegramBudget.Data.Entities.User", "User")
                         .WithMany("Participating")
-                        .HasForeignKey("ParticipantId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Budget");
 
-                    b.Navigation("Participant");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TelegramBudget.Data.Entities.Transaction", b =>
@@ -230,8 +236,7 @@ namespace TelegramBudget.Migrations
                     b.HasOne("TelegramBudget.Data.Entities.User", "Author")
                         .WithMany("Transactions")
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Author");
 

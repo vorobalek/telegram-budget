@@ -4,7 +4,7 @@ using TelegramBudget.Configuration;
 
 namespace TelegramBudget.Services;
 
-public class ConfigureWebhookHostedService(
+internal sealed class ConfigureWebhookHostedService(
     ILogger<ConfigureWebhookHostedService> logger,
     IServiceScopeFactory serviceScopeFactory)
     : IHostedService

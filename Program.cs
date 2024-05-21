@@ -69,7 +69,7 @@ var host = Host
 
             services.AddSingleton<GlobalCancellationTokenSource>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<ITelegramBotClientWrapper, TelegramBotClientWrapper>();
+            services.AddScoped<ITelegramBotWrapper, TelegramBotWrapper>();
             services.AddTelegramHandlers();
 
             services.AddHttpContextAccessor();
@@ -91,6 +91,7 @@ var host = Host
 
         builder.Configure(app =>
         {
+            app.UseHealthChecks("/health");
             app.UseTracee(postRequestAsync:
                 tracee =>
                 {
@@ -98,7 +99,6 @@ var host = Host
                     return Task.CompletedTask;
                 });
             app.UseMiddleware<ExceptionHandlerMiddleware>();
-            app.UseHealthChecks("/health");
             app.UseWhen(
                 context => context.Request.Path.StartsWithSegments("/bot"),
                 a => a.UseMiddleware<SecretTokenValidatorMiddleware>());

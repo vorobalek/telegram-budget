@@ -9,20 +9,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.3"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.3"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
+        <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.4" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.4" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2"/>
-        <PackageReference Include="Sentry.AspNetCore" Version="4.2.1"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+        <PackageReference Include="Sentry.AspNetCore" Version="4.6.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
         <PackageReference Include="Telegram.Bot" Version="19.0.0"/>
-        <PackageReference Include="Telegram.Flow" Version="0.0.2-202405130922" />
-        <PackageReference Include="TR.LPlus" Version="0.0.2-202405130922" />
-        <PackageReference Include="Tracee.AspNetCore" Version="0.0.2-202405130922" />
-        <PackageReference Include="vorobalek.Common.Database" Version="0.0.2-202405130922" />
+        <PackageReference Include="Telegram.Flow" Version="0.0.2-202405211440" />
+        <PackageReference Include="TR.LPlus" Version="0.0.2-202405211440" />
+        <PackageReference Include="Tracee.AspNetCore" Version="0.0.2-202405211440" />
+        <PackageReference Include="vorobalek.Common.Database" Version="0.0.2-202405211440" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,6 +35,9 @@
     <ItemGroup>
         <Compile Update="Data\ApplicationDbContext.Entities.cs">
             <DependentUpon>ApplicationDbContext.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Data\Entities\UserPromptSubjectType.cs">
+          <DependentUpon>User.cs</DependentUpon>
         </Compile>
     </ItemGroup>
 

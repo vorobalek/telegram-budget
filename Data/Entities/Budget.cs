@@ -7,19 +7,19 @@ using Newtonsoft.Json;
 
 namespace TelegramBudget.Data.Entities;
 
-public class Budget :
+public sealed class Budget :
     Entity<Budget>,
     IIdTrait<Guid>,
     ICreatedByTrait<long?>
 {
-    private ICollection<User> _activeUsers;
-
     private User? _owner;
-
-    private ICollection<Participating> _participating;
-
+    private ICollection<User> _activeUsers;
+    private ICollection<Participant> _participating;
     private ICollection<Transaction> _transactions;
+
+    public Guid Id { get; set; }
     public string Name { get; set; } = null!;
+    public long? CreatedBy { get; set; }
 
     [JsonIgnore]
     public ICollection<User> ActiveUsers
@@ -36,7 +36,7 @@ public class Budget :
     }
 
     [JsonIgnore]
-    public ICollection<Participating> Participating
+    public ICollection<Participant> Participating
     {
         get => Lazy(ref _participating);
         set => _participating = value;
@@ -48,10 +48,6 @@ public class Budget :
         get => Lazy(ref _owner);
         set => _owner = value;
     }
-
-    public long? CreatedBy { get; set; }
-
-    public Guid Id { get; set; }
 
     public sealed class ChangeListener : EntityChangeListener<Budget>
     {

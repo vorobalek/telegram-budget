@@ -3,7 +3,7 @@ using TelegramBudget.Services.CurrentUser;
 
 namespace TelegramBudget.Data;
 
-public class CreatedByLongChangeListener<TEntity>(ICurrentUserService currentUserService)
+public sealed class CreatedByLongChangeListener<TEntity>(ICurrentUserService currentUserService)
     : CreatedByChangeListener<TEntity, long>
     where TEntity : class, ICreatedByTrait<long>
 {
