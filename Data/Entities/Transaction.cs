@@ -49,7 +49,7 @@ public sealed class Transaction :
         set => _confirmations = value;
     }
 
-    //[Table("transaction_version")]
+    [Table("transaction_version")]
     public sealed class Version : EntityVersion<Transaction, Guid, Version>;
 
     public sealed class ChangeListener : EntityChangeListener<Transaction>

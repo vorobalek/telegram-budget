@@ -30,12 +30,12 @@ public sealed partial class ApplicationDbContext : DbContext, ICommonDbContext<A
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // optionsBuilder
-        //     .UseNpgsql(builder =>
-        //     {
-        //         builder.MigrationsHistoryTable("__ef_migrations");
-        //     })
-        //     .UseSnakeCaseNamingConvention();
+        optionsBuilder
+            .UseNpgsql(builder =>
+            {
+                builder.MigrationsHistoryTable("__ef_migrations_history");
+            })
+            .UseSnakeCaseNamingConvention();
         base.OnConfiguring(optionsBuilder);
         this.CommonConfiguring(optionsBuilder);
 #if DEBUG
