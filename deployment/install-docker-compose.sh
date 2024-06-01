@@ -469,10 +469,10 @@ main() {
   generate_postgres_environment_file
   generate_docker_compose
   generate_nginx_configuration
-  #generate_certificates
+  generate_certificates
   update_nginx_configuration
   copy_installed
-  #cleanup
+  cleanup
 }
 
 main || exit
