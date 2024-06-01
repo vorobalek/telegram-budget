@@ -6,14 +6,14 @@ cleanup() {
   docker compose -f "./.tmp/$NOW/docker-compose.yml" down -v || true
   docker compose -f "./.tmp/$NOW/docker-compose.yml" rm || true
   rm -rf "./.tmp/$NOW"
-  printf " \033[31m %s \n\033[0m" "./.tmp/$NOW Deleted."
+  printf "\033[31m%s\n\033[0m" "./.tmp/$NOW Deleted."
 }
 
 handle_error() {
-  printf " \033[31m %s \n\033[0m" "Something went wrong. Unable to proceed. Status: $?" >&2
-  printf " \033[31m %s \n\033[0m" "Cleaning up..."
+  printf "\033[31m%s\n\033[0m" "Something went wrong. Unable to proceed. Status: $?" >&2
+  printf "\033[31m%s\n\033[0m" "Cleaning up..."
   cleanup
-  printf " \033[31m %s \n\033[0m" "Done."
+  printf "\033[31m%s\n\033[0m" "Done."
   exit 1
 }
 
@@ -33,11 +33,11 @@ secure_input() {
 
   while IFS= read -p "$__PROMPT__" -r -s -n 1 __CHAR__
   do
-    if [[ $__CHAR__ == $'\0' ]] ; then
+    if [[ $__CHAR__ == $'\0' ]]; then
       break
     fi
-    if [[ $__CHAR__ == $'\177' ]] ; then
-      if [ $__CHAR_COUNT__ -gt 0 ] ; then
+    if [[ $__CHAR__ == $'\177' ]]; then
+      if [ $__CHAR_COUNT__ -gt 0 ]; then
         __CHAR_COUNT__=$((__CHAR_COUNT__-1))
         __PROMPT__=$'\b \b'
         __PASSWORD__="${__PASSWORD__%?}"
@@ -56,7 +56,7 @@ secure_input() {
 
 prompt_directory() {
   read -rp "Enter installation directory ('$NOW' by default): " DIRECTORY
-  if [[ $DIRECTORY == "" ]] ; then
+  if [[ $DIRECTORY == "" ]]; then
     DIRECTORY="$NOW"
   fi
   mkdir "./$DIRECTORY" || handle_error 
@@ -72,16 +72,14 @@ prompt_number_of_replicas() {
   __IS_NUMBER_REGEX__='(^[0-9]+$)|(^$)'
   while true; do
     read -rp "Enter number of replicas (1 by default): " NUMBER_OF_REPLICAS
-    if [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]]
-    then
-      if [[ $NUMBER_OF_REPLICAS -eq 0 ]]
-      then
+    if [[ $NUMBER_OF_REPLICAS =~ $__IS_NUMBER_REGEX__ ]]; then
+      if [[ $NUMBER_OF_REPLICAS -eq 0 ]]; then
         NUMBER_OF_REPLICAS=1
-        printf " \033[31m %s \n\033[0m" "value '1' has been set"
+        printf "\033[31m%s\n\033[0m" "value '1' has been set"
       fi
       return 0
     else
-      printf " \033[31m %s \n\033[0m" "invalid input"
+      printf "\033[31m%s\n\033[0m" "invalid input"
     fi
   done
 }
@@ -93,14 +91,13 @@ prompt_confirmation() {
     case $__CONFIRMATION__ in
       [yY]) return 0 ;;
       [nN]) return 1 ;;
-      *) printf " \033[31m %s \n\033[0m" "invalid input"
+      *) printf "\033[31m%s\n\033[0m" "invalid input" ;;
     esac
   done
 }
 
 prompt_setup_db() {
-  if prompt_confirmation "Setup database"
-  then
+  if prompt_confirmation "Setup database"; then
     SETUP_DB=1
     return 0
   else
@@ -130,14 +127,13 @@ prompt_db_password_confirmation() {
 prompt_db_password_double_checked() {
   while true; do
     prompt_db_password && prompt_db_password_confirmation
-    [ "$DB_PASSWORD" = "$DB_PASSWORD_CONFIRMATION" ] && break;
-    printf " \033[31m %s \n\033[0m" "passwords don't match, try again"
+    [ "$DB_PASSWORD" = "$DB_PASSWORD_CONFIRMATION" ] && break
+    printf "\033[31m%s\n\033[0m" "passwords don't match, try again"
   done
 }
 
 prompt_db_connection_string() {
-  if [[ $SETUP_DB == 1 ]]
-  then
+  if [[ $SETUP_DB == 1 ]]; then
     DB_CONNECTION_STRING="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$DB_PASSWORD"
     DB_CONNECTION_STRING_MASKED="Server=postgres;Port=5432;Database=$DB_NAME;User Id=$DB_USER;Password=$(mask "$DB_PASSWORD")"
   else
@@ -162,11 +158,10 @@ prompt_authorized_user_ids() {
   __IS_NUMBER_SET_REGEX__='(^[0-9,; ]+$)|(^\*$)'
   while true; do
     read -rp "Enter authorized used ids (only digits, comma, and semicolon allowed. Or '*' to allow public access): " AUTHORIZED_USER_IDS
-    if [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]]
-    then
+    if [[ $AUTHORIZED_USER_IDS =~ $__IS_NUMBER_SET_REGEX__ ]]; then
       return 0
     else
-      printf " \033[31m %s \n\033[0m" "invalid input"
+      printf "\033[31m%s\n\033[0m" "invalid input"
     fi
   done
 }
@@ -178,15 +173,14 @@ prompt_locale() {
       "en") return 0 ;;
       "ru") return 0 ;;
       "") LOCALE="en" && return 0 ;;
-      *) printf " \033[31m %s \n\033[0m" "invalid input"
+      *) printf "\033[31m%s\n\033[0m" "invalid input" ;;
     esac
   done
 }
 
 prompt_datetime_format() {
   read -rp "Enter date/time format (or press enter for default): " DATETIME_FORMAT
-  if [[ $DATETIME_FORMAT == "" ]]
-  then
+  if [[ $DATETIME_FORMAT == "" ]]; then
     DATETIME_FORMAT="hh:mm tt MM/dd/yyyy"
   fi
 }
@@ -200,8 +194,7 @@ prompt_input() {
   prompt_directory
   prompt_domain
   prompt_number_of_replicas
-  if prompt_setup_db
-  then
+  if prompt_setup_db; then
     prompt_db_name
     prompt_db_user
     prompt_db_password_double_checked
@@ -223,8 +216,7 @@ Your configuration:
 > Number of replicas: $NUMBER_OF_REPLICAS
 > Database settings:"
 
-  if [[ $SETUP_DB = 1 ]]
-  then
+  if [[ $SETUP_DB = 1 ]]; then
     /bin/echo ">>> [A new database will be set]
 >>> database: $DB_NAME
 >>> username: $DB_USER
@@ -266,9 +258,8 @@ prompt_input_double_checked() {
     unset_variables
     prompt_input
     print_configuration
-    if prompt_confirmation "Is everything correct"
-    then
-      break;
+    if prompt_confirmation "Is everything correct"; then
+      break
     fi
   done
 }
@@ -409,7 +400,7 @@ generate_nginx_configuration() {
   location / {
     return 301 https://$DOMAIN\$request_uri;
   }
-}" > "./.tmp/$NOW/nginx/conf/$DOMAIN".conf
+}" > "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
 
   /bin/echo "Done."
 }
