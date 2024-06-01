@@ -92,6 +92,7 @@ internal sealed class TransactionEditedPlainText(
                         ? messageId
                         : null,
                     parseMode: ParseMode.Html,
+                    replyMarkup: Keyboards.ShowMainInline,
                     cancellationToken: cancellationToken);
     }
 }

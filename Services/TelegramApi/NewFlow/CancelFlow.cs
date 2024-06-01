@@ -1,30 +1,39 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Flow.Updates.Messages.Texts.BotCommands;
 using TelegramBudget.Data;
 using TelegramBudget.Data.Entities;
 using TelegramBudget.Services.CurrentUser;
+using TelegramBudget.Services.TelegramApi.NewFlow.Infrastructure;
 using TelegramBudget.Services.TelegramBotClientWrapper;
 using Tracee;
 
 namespace TelegramBudget.Services.TelegramApi.NewFlow;
 
-internal sealed class NewCancel(
+internal sealed class CancelFlow(
     ITracee tracee,
     ApplicationDbContext db,
     ICurrentUserService currentUserService,
-    ITelegramBotWrapper botWrapper) : IBotCommandFlow
+    ITelegramBotWrapper botWrapper,
+    MainFlow mainFlow) : IBotCommandFlow
 {
     public const string Command = "cancel";
     
-    public async Task ProcessAsync(string __, CancellationToken cancellationToken)
+    public async Task ProcessAsync(IBotCommandContext context, CancellationToken cancellationToken)
+    {
+        await ProcessAsync(cancellationToken);
+    }
+
+    public async Task ProcessAsync(CancellationToken cancellationToken)
     {
         using var _ = tracee.Scoped("cancel");
 
         var user = await GetUserAsync(cancellationToken);
         var text = PrepareReply(user.PromptSubject);
         await UpdateUserAsync(user, cancellationToken);
-        await SubmitReplyAsync(text, cancellationToken);
+        await Task.WhenAll(
+            SubmitReplyAsync(text, cancellationToken),
+            mainFlow.ProcessAsync(cancellationToken));
     }
 
     private async Task<User> GetUserAsync(CancellationToken cancellationToken)
@@ -65,7 +74,6 @@ internal sealed class NewCancel(
                 currentUserService.TelegramUser.Id,
                 text,
                 parseMode: ParseMode.Html,
-                replyMarkup: new ReplyKeyboardRemove(),
                 cancellationToken: cancellationToken);
     }
 }

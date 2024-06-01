@@ -21,7 +21,7 @@ public static class TraceeExtensions
             .Select(group => new
             {
                 group.Key,
-                Created = group.Min(metric => metric.Key.Created),
+                Created = group.Max(metric => metric.Key.Created),
                 Depth = group.Min(metric => metric.Key.Depth),
                 Value = group.Sum(metric => metric.Value.Milliseconds)
             })
