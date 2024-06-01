@@ -5,25 +5,23 @@ Small profit-loss calculator via serverless telegram bot. Made far away from hom
 ## Try it out
 [Telegram Demo Bot](https://t.me/telegram_budget_demo_bot)
 
-## Preview
 
-| Scenario            |                                                                                                                 |                                                                                                                |                                                                                                                |                                                                                                                |
-|---------------------|-----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| First Usage         | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/6882a7b0-a6d1-47b9-9385-8322cdae3d9f">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/db63db48-ebfa-462c-b28c-fc2de7f4c3aa"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/3ec5a5f5-8ffd-4e05-a497-b461443c9c53"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/5f260908-6f49-47b8-a2a7-643292fae277"> |
-| Adding transaction  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/40ba7725-5bf5-4bf6-9179-a0d4e1f8f0fd">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/0a100948-a4d9-4029-b632-78afea85d892"> |                                                                                                                |                                                                                                                |
-| Editing transaction | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/b93e8564-3b81-4542-8135-655d7637a257">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/36543792-32f1-4c5a-a521-f81672e02620"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/3690ddd7-261f-4a9a-9098-c609069ae968"> |                                                                                                                |
-| Main menu           | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/b291062a-6734-4a11-b87d-17344fc314aa">  |                                                                                                                |                                                                                                                |                                                                                                                |
+## Installation
+1. Follow the script instructions
+  ```bash
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/main/deployment/install-docker-compose.sh)"
+  ```
+2. Run services from the directory you have chosen during installation process
+  ```bash
+  cd <path to your installation directory> && docker compose up
+  ```
+  or
+  ```bash
+  docker compose -f <path to your installation directory>/docker-compose.yml up -d && \
+  docker compose -f <path to your installation directory>/docker-compose.yml logs backend -f
+  ```
 
-
-
-## Docker Compose installation
-```bash
-git clone https://github.com/vorobalek/telegram-budget.git
-cd telegram-budget
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/main/deployment/install-docker-compose.sh)"
-```
-
-## Build
+## Build & Run manually
 1. ```bash
    docker build -t <image nametag> .
    ```
@@ -60,6 +58,14 @@ cd telegram-budget
 | `DATETIME_FORMAT`         | The format for the date and time text representation. Ex.: `hh:mm tt MM/dd/yyyy` or `dd.MM.yyyy HH:mm`.                                                                                                                                                            | NO       | NO     | `hh:mm tt MM/dd/yyyy` |
 | `SENTRY_DSN`              | The Data Source Name of a project in Sentry. Not configured by default.                                                                                                                                                                                            | NO       | YES    | –                     |
 
+## Preview
+
+| Scenario            |                                                                                                                 |                                                                                                                |                                                                                                                |                                                                                                                |
+|---------------------|-----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| First Usage         | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/6882a7b0-a6d1-47b9-9385-8322cdae3d9f">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/db63db48-ebfa-462c-b28c-fc2de7f4c3aa"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/3ec5a5f5-8ffd-4e05-a497-b461443c9c53"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/5f260908-6f49-47b8-a2a7-643292fae277"> |
+| Adding transaction  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/40ba7725-5bf5-4bf6-9179-a0d4e1f8f0fd">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/0a100948-a4d9-4029-b632-78afea85d892"> |                                                                                                                |                                                                                                                |
+| Editing transaction | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/b93e8564-3b81-4542-8135-655d7637a257">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/36543792-32f1-4c5a-a521-f81672e02620"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/3690ddd7-261f-4a9a-9098-c609069ae968"> |                                                                                                                |
+| Main menu           | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/b291062a-6734-4a11-b87d-17344fc314aa">  |                                                                                                                |                                                                                                                |                                                                                                                |
 
 ## Usage
 After launching the bot, you can interact with it through Telegram. Use the following commands to manage your budget:

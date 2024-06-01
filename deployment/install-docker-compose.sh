@@ -2,23 +2,57 @@
 
 set -e
 
+NOW=$(date +%Y%m%d%H%M)
+DIRECTORY="$NOW"
+
+check_dependencies() {
+  if ! command -v docker &> /dev/null; then
+    printf " \033[31m%s\n\033[0m" "Docker is not installed. Please install Docker to proceed."
+    exit 1
+  fi
+
+  local __DOCKER_VERSION__
+  local __REQUIRED_DOCKER_VERSION__="26.1.1"
+
+  __DOCKER_VERSION__=$(docker --version | awk '{print $3}' | sed 's/,//')
+  if [ "$(printf '%s\n' "$__REQUIRED_DOCKER_VERSION__" "$__DOCKER_VERSION__" | sort -V | head -n1)" != "$__REQUIRED_DOCKER_VERSION__" ]; then
+    printf " \033[31m%s\n\033[0m" "Docker version is older than $__REQUIRED_DOCKER_VERSION__. Please update Docker to proceed."
+    exit 1
+  fi
+
+  local __DOCKER_COMPOSE_OUTPUT__
+  __DOCKER_COMPOSE_OUTPUT__=$(docker compose version 2>&1)
+  if echo "$__DOCKER_COMPOSE_OUTPUT__" | grep -q "docker: 'compose' is not a docker command."; then
+    printf " \033[31m%s\n\033[0m" "Docker Compose Plugin is not installed. Please install Docker Compose Plugin to proceed."
+    exit 1
+  fi
+
+  local __DOCKER_COMPOSE_VERSION__
+  local __REQUIRED_DOCKER_COMPOSE_VERSION__="v2.27.0"
+
+  __DOCKER_COMPOSE_VERSION__=$(echo "$__DOCKER_COMPOSE_OUTPUT__" | awk '{print $4}' | sed 's/,//')
+  if [ "$(printf '%s\n' "$__REQUIRED_DOCKER_COMPOSE_VERSION__" "$__DOCKER_COMPOSE_VERSION__" | sort -V | head -n1)" != "$__REQUIRED_DOCKER_COMPOSE_VERSION__" ]; then
+    printf " \033[31m%s\n\033[0m" "Docker Compose Plugin version is older than $__REQUIRED_DOCKER_COMPOSE_VERSION__. Please update Docker Compose Plugin to proceed."
+    exit 1
+  fi
+}
+
 cleanup() {
   docker compose -f "./.tmp/$NOW/docker-compose.yml" down -v || true
   docker compose -f "./.tmp/$NOW/docker-compose.yml" rm || true
-  rm -rf "./.tmp/$NOW"
-  printf "\033[31m%s\n\033[0m" "./.tmp/$NOW Deleted."
+  (rm -rf "./.tmp/$NOW" && printf "\033[31m%s\n\033[0m" "./.tmp/$NOW Deleted.") || true
 }
 
 handle_error() {
   printf "\033[31m%s\n\033[0m" "Something went wrong. Unable to proceed. Status: $?" >&2
   printf "\033[31m%s\n\033[0m" "Cleaning up..."
   cleanup
+  (rm -rf "$DIRECTORY" && printf "\033[31m%s\n\033[0m" "./$DIRECTORY Deleted.") || true
   printf "\033[31m%s\n\033[0m" "Done."
   exit 1
 }
 
 trap 'handle_error' ERR SIGINT SIGQUIT SIGTSTP
-NOW=$(date +%Y%m%d%H%M)
 
 mask() {
   local __MASKED__
@@ -455,6 +489,7 @@ copy_installed() {
 }
 
 main() {
+  check_dependencies
   prompt_input_double_checked
   generate_backend_environment_file
   generate_postgres_environment_file
