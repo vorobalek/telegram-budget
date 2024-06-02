@@ -1,62 +1,6 @@
 # Telegram-Budget
 
-Small profit-loss calculator via serverless telegram bot. Made far away from home in order to control family expenses and shared budgets.
-
-## Try it out
-[Telegram Demo Bot](https://t.me/telegram_budget_demo_bot)
-
-
-## Installation
-1. Follow the script instructions
-  ```bash
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/main/deployment/install-docker-compose.sh)"
-  ```
-2. Run services from the directory you have chosen during installation process
-  ```bash
-  cd <path to your installation directory> && docker compose up
-  ```
-  or
-  ```bash
-  docker compose -f <path to your installation directory>/docker-compose.yml up -d && \
-  docker compose -f <path to your installation directory>/docker-compose.yml logs backend -f
-  ```
-
-## Build & Run manually
-1. ```bash
-   docker build -t <image nametag> .
-   ```
-2. ```bash 
-   docker run \
-     -d \
-     -e 'TELEGRAM_BOT_TOKEN=<...>' \
-     -e 'TELEGRAM_WEBHOOK_SECRET=<...>' \
-     -e 'DB_CONNECTION_STRING=<...>' \
-     -e 'PORT=<...>' \
-     -e 'DOMAIN=<...>' \ 
-     -e 'AUTHORIZED_USER_IDS=<...>' \
-     -e 'LOCALE=<...>' \
-     -e 'DATE_FORMAT=<...>' 
-     -e 'DATETIME_FORMAT=<...>' \
-     -e 'SENTRY_DSN=<...>' \
-     -p <machine port>:<container port> \
-   --restart always \
-   --name <container name> \
-   <image nametag>
-   ```
-
-## Environment variables (ex. is located [here](./Properties/launchSettings.json))
-
-| Key                       | Description                                                                                                                                                                                                                                                        | Required | Secret | Default               |
-|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------|-----------------------|
-| `TELEGRAM_BOT_TOKEN`      | Telegram Bot API token.                                                                                                                                                                                                                                            | YES      | YES    |                       |
-| `TELEGRAM_WEBHOOK_SECRET` | A secret token to be sent in a header `X-Telegram-Bot-Api-Secret-Token` in every webhook request, 1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_` and `-` are allowed. The header is useful to ensure that the request comes from a webhook set by you. | YES      | YES    |                       |
-| `DB_CONNECTION_STRING`    | The connection string of the PostgreSQL database to connect to.                                                                                                                                                                                                    | YES      | YES    |                       |
-| `PORT`                    | The number of the port for receiving requests after SSL proxy if you have.                                                                                                                                                                                         | YES      | NO     | –                     |
-| `DOMAIN`                  | The domain to send Telegram updates to. SSL is required. The `https://` prefix will be added.                                                                                                                                                                      | YES      | NO     | –                     |
-| `AUTHORIZED_USER_IDS`     | A list of Telegram user IDs allowed to interact with the bot. List of numbers splitted by commas, spaces, or semicolons. Or `*` to authorize everyone.                                                                                                             | YES      | NO     | –                     |
-| `LOCALE`                  | The locale for the text responses from the bot. Only `ru` and `en` are currently available.                                                                                                                                                                        | NO       | NO     | `en`                  |
-| `DATETIME_FORMAT`         | The format for the date and time text representation. Ex.: `hh:mm tt MM/dd/yyyy` or `dd.MM.yyyy HH:mm`.                                                                                                                                                            | NO       | NO     | `hh:mm tt MM/dd/yyyy` |
-| `SENTRY_DSN`              | The Data Source Name of a project in Sentry. Not configured by default.                                                                                                                                                                                            | NO       | YES    | –                     |
+Small profit-loss calculator via telegram bot. Made far away from home in order to control family expenses and shared budgets.
 
 ## Preview
 
@@ -66,6 +10,9 @@ Small profit-loss calculator via serverless telegram bot. Made far away from hom
 | Adding transaction  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/40ba7725-5bf5-4bf6-9179-a0d4e1f8f0fd">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/0a100948-a4d9-4029-b632-78afea85d892"> |                                                                                                                |                                                                                                                |
 | Editing transaction | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/b93e8564-3b81-4542-8135-655d7637a257">  | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/36543792-32f1-4c5a-a521-f81672e02620"> | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/3690ddd7-261f-4a9a-9098-c609069ae968"> |                                                                                                                |
 | Main menu           | <img src="https://github.com/vorobalek/telegram-budget/assets/106157881/b291062a-6734-4a11-b87d-17344fc314aa">  |                                                                                                                |                                                                                                                |                                                                                                                |
+
+## Try it out
+[Telegram Demo Bot](https://t.me/telegram_budget_demo_bot)
 
 ## Usage
 After launching the bot, you can interact with it through Telegram. Use the following commands to manage your budget:
@@ -105,14 +52,14 @@ You can interact with the bot through the button interface on the main page. Exa
 - **Main Page**:
 
   <img width="332" alt="Main Page" src="https://github.com/vorobalek/telegram-budget/assets/106157881/d21f8f8f-3a09-4b7d-b09c-6b0ce362acc9">
-  
+
   (The "Share" and "Delete" buttons are still in development – use commands `/grant` and `/delete` for these functions)
   - The main page displays the latest transactions for the current day in the user\`s timezone. The timezone can be set using the `/timezone` command.
 
 - **History**:
 
   <img width="332" alt="History Page" src="https://github.com/vorobalek/telegram-budget/assets/106157881/37ec3885-9f70-4c0e-b2cf-543dd50b5196">
-  
+
   - Transactions in the history section are ordered from the most recent to the oldest. There is pagination.
 
 - **Switch Budget**:
@@ -126,3 +73,80 @@ Any message in the format: `<amount> <comment>` (e.g., `-10 for coffee`) will be
 
 ### Editing Transactions
 Any transaction can be edited by modifying the sent message. In this case, all participants of the budget will receive a notification about the change. Editing the amount and comment is allowed. Only the user who created the transaction can edit it.
+
+## Installation Requirements
+
+Before you start the installation, ensure the following requirements are met:
+
+1. **Clean Machine**:
+  - Docker version 26.1.1 or newer
+  - Docker Compose version 2.27.0 or newer
+2. **Domain Name**:
+  - A domain name that you own, already pointed to the target machine IP (this is necessary because the installation script will obtain certificates during the setup process).
+3. **API Token**:
+  - A Telegram Bot API Token which you can get from [@BotFather](https://t.me/BotFather)
+
+
+## Installation
+
+![Telegram Budget Installation 720p](https://github.com/vorobalek/telegram-budget/assets/106157881/25e3a3e8-b0ab-49c4-bb99-66f9ec167c5e)
+
+
+1. Follow the script instructions
+  ```bash
+  # Download and run the installation script
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/vorobalek/telegram-budget/main/deployment/install-docker-compose.sh)"
+  ```
+2. Run services from the directory you have chosen during installation process
+  ```bash
+  # Navigate to your installation directory and start the services
+  cd <path to your installation directory> && docker compose up
+  ```
+or
+  ```bash
+  # Navigate to your installation directory and start the services with following logs
+  docker compose -f <path to your installation directory>/docker-compose.yml up -d && \
+  docker compose -f <path to your installation directory>/docker-compose.yml logs backend -f
+  ```
+3. Renew certificate
+  ```bash
+  # Renew letsencrypt certificate
+  docker compose -f <path to your installation directory>/docker-compose.yml run --rm certbot certonly -d <your domain> --webroot --webroot-path /var/www/certbot/
+  ```
+
+## Build & Run manually
+1. ```bash
+   docker build -t <image nametag> .
+   ```
+2. ```bash 
+   docker run \
+     -d \
+     -e 'TELEGRAM_BOT_TOKEN=<...>' \
+     -e 'TELEGRAM_WEBHOOK_SECRET=<...>' \
+     -e 'DB_CONNECTION_STRING=<...>' \
+     -e 'PORT=<...>' \
+     -e 'DOMAIN=<...>' \ 
+     -e 'AUTHORIZED_USER_IDS=<...>' \
+     -e 'LOCALE=<...>' \
+     -e 'DATE_FORMAT=<...>' 
+     -e 'DATETIME_FORMAT=<...>' \
+     -e 'SENTRY_DSN=<...>' \
+     -p <machine port>:<container port> \
+   --restart always \
+   --name <container name> \
+   <image nametag>
+   ```
+
+## Environment variables (ex. is located [here](./Properties/launchSettings.json))
+
+| Key                       | Description                                                                                                                                                                                                                                                        | Required | Secret | Default               |
+|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------|-----------------------|
+| `TELEGRAM_BOT_TOKEN`      | Telegram Bot API token.                                                                                                                                                                                                                                            | YES      | YES    |                       |
+| `TELEGRAM_WEBHOOK_SECRET` | A secret token to be sent in a header `X-Telegram-Bot-Api-Secret-Token` in every webhook request, 1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_` and `-` are allowed. The header is useful to ensure that the request comes from a webhook set by you. | YES      | YES    |                       |
+| `DB_CONNECTION_STRING`    | The connection string of the PostgreSQL database to connect to.                                                                                                                                                                                                    | YES      | YES    |                       |
+| `PORT`                    | The number of the port for receiving requests after SSL proxy if you have.                                                                                                                                                                                         | YES      | NO     | –                     |
+| `DOMAIN`                  | The domain to send Telegram updates to. SSL is required. The `https://` prefix will be added.                                                                                                                                                                      | YES      | NO     | –                     |
+| `AUTHORIZED_USER_IDS`     | A list of Telegram user IDs allowed to interact with the bot. List of numbers splitted by commas, spaces, or semicolons. Or `*` to authorize everyone.                                                                                                             | YES      | NO     | –                     |
+| `LOCALE`                  | The locale for the text responses from the bot. Only `ru` and `en` are currently available.                                                                                                                                                                        | NO       | NO     | `en`                  |
+| `DATETIME_FORMAT`         | The format for the date and time text representation. Ex.: `hh:mm tt MM/dd/yyyy` or `dd.MM.yyyy HH:mm`.                                                                                                                                                            | NO       | NO     | `hh:mm tt MM/dd/yyyy` |
+| `SENTRY_DSN`              | The Data Source Name of a project in Sentry. Not configured by default.                                                                                                                                                                                            | NO       | YES    | –                     |
