@@ -470,14 +470,8 @@ server {
     proxy_pass http://backends;
   }
   location / {
+    add_header Reason \"Try better, chicken. You've been rick-rolled.\";
     return 302 https://youtu.be/dQw4w9WgXcQ?si=YgqFHwW3_gusiTFf&t=43;
-
-    add_header Content-Type \"application/json\";
-    add_header Location \"https://youtu.be/dQw4w9WgXcQ?si=YgqFHwW3_gusiTFf&t=43\";
-    add_header Reason \"You've been rick-rolled.\";
-
-    default_type application/json;
-    return 302 \"{\\\"message\\\": \\\"You've been rick-rolled.\\\"}\";
   }
 }" >> "./.tmp/$NOW/nginx/conf/$DOMAIN.conf"
 
