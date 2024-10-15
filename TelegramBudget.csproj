@@ -41,4 +41,13 @@
         </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="demo.Dockerfile">
+        <DependentUpon>Dockerfile</DependentUpon>
+      </None>
+      <None Update="staging.Dockerfile">
+        <DependentUpon>Dockerfile</DependentUpon>
+      </None>
+    </ItemGroup>
+
 </Project>
