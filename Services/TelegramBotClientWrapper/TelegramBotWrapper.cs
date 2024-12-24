@@ -21,14 +21,13 @@ internal sealed class TelegramBotWrapper(
         IReplyMarkup? replyMarkup = default, CancellationToken cancellationToken = default)
     {
         using var trace = tracee.Fixed("submit_total");
-        return await botClient
+        var message = await botClient
             .SendTextMessageAsync(
                 chatId,
-                AppConfiguration.DebugResponseTime
-                    ? $"{text.Trim()}\n\n{tracee.Milliseconds} ms"
-                    : text.Trim(),
+                text.Trim(),
                 messageThreadId,
                 parseMode,
+                // ReSharper disable once PossibleMultipleEnumeration
                 entities,
                 disableWebPagePreview,
                 disableNotification,
@@ -37,6 +36,23 @@ internal sealed class TelegramBotWrapper(
                 allowSendingWithoutReply,
                 replyMarkup,
                 cancellationToken);
+
+        if (AppConfiguration.DebugResponseTime)
+        {
+            await botClient
+                .EditMessageTextAsync(
+                    chatId,
+                    message.MessageId,
+                    $"{text.Trim()}\n\n{tracee.Milliseconds} ms",
+                    parseMode,
+                    // ReSharper disable once PossibleMultipleEnumeration
+                    entities,
+                    disableWebPagePreview,
+                    replyMarkup as InlineKeyboardMarkup,
+                    cancellationToken);
+        }
+        
+        return message;
     }
 
     public async Task<Message> EditMessageTextAsync(ChatId chatId, int messageId, string text,
@@ -46,17 +62,33 @@ internal sealed class TelegramBotWrapper(
         CancellationToken cancellationToken = default)
     {
         using var trace = tracee.Fixed("submit_total");
-        return await botClient
+        var message = await botClient
             .EditMessageTextAsync(
                 chatId,
                 messageId,
-                AppConfiguration.DebugResponseTime
-                    ? $"{text.Trim()}\n\n{tracee.Milliseconds} ms"
-                    : text.Trim(),
+                text.Trim(),
                 parseMode,
+                // ReSharper disable once PossibleMultipleEnumeration
                 entities,
                 disableWebPagePreview,
                 replyMarkup,
                 cancellationToken);
+
+        if (AppConfiguration.DebugResponseTime)
+        {
+            await botClient
+                .EditMessageTextAsync(
+                    chatId,
+                    message.MessageId,
+                    $"{text.Trim()}\n\n{tracee.Milliseconds} ms",
+                    parseMode,
+                    // ReSharper disable once PossibleMultipleEnumeration
+                    entities,
+                    disableWebPagePreview,
+                    replyMarkup,
+                    cancellationToken);
+        }
+        
+        return message;
     }
 }
