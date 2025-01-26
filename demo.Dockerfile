@@ -21,6 +21,6 @@ RUN apt-get update && apt-get install -y curl unzip && \
 ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://grafana-alloy:4318
 ENV OTEL_SERVICE_NAME=telegram-budget-demo
-ENV OTEL_RESOURCE_ATTRIBUTES="service.namespace=telegram-budget,deployment.environment=demo,service.instance.id=telegram-budget-demo@ubuntu-0,service.version=demo-latest"
+ENV OTEL_RESOURCE_ATTRIBUTES="service.namespace=telegram-budget,deployment.environment=demo,service.instance.id=telegram-budget-demo@ubuntu-0,service.version=demo"
 
 ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "TelegramBudget.dll"]
