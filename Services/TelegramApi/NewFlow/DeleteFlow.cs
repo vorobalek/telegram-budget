@@ -14,7 +14,7 @@ internal sealed class DeleteFlow(ITelegramBotWrapper botWrapper) : ICallbackQuer
     {
         await botWrapper
             .BotClient
-            .AnswerCallbackQueryAsync(
+            .AnswerCallbackQuery(
                 context.CallbackQuery.Id,
                 TR.L + "_NOT_IMPLEMENTED",
                 showAlert: true,

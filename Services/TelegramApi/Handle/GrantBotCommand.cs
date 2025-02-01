@@ -27,7 +27,7 @@ internal sealed class GrantBotCommand(
                     cancellationToken))
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_GRANTED", args.UserToShare.GetFullNameLink(),
                         args.BudgetToShare.Name.EscapeHtml()),
@@ -59,7 +59,7 @@ internal sealed class GrantBotCommand(
 
         foreach (var participantId in participantIds)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participantId,
                     string.Format(TR.L + "GRANTED_TO_USER", args.BudgetToShare.Name.EscapeHtml(),
                         args.UserToShare.GetFullNameLink(), currentUserService.TelegramUser.GetFullNameLink()),
@@ -67,7 +67,7 @@ internal sealed class GrantBotCommand(
                     cancellationToken: cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 args.UserToShare.Id,
                 string.Format(TR.L + "GRANTED_TO_YOU", args.BudgetToShare.Name.EscapeHtml(),
                     currentUserService.TelegramUser.GetFullNameLink()),
@@ -83,7 +83,7 @@ internal sealed class GrantBotCommand(
         if (string.IsNullOrWhiteSpace(userToShareIdString))
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     TR.L + "GRANT_EXAMPLE",
                     parseMode: ParseMode.Html,
@@ -94,7 +94,7 @@ internal sealed class GrantBotCommand(
         if (!long.TryParse(userToShareIdString, out var userToShareId))
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "INVALID_USER_ID", userToShareIdString.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -105,7 +105,7 @@ internal sealed class GrantBotCommand(
         if (await db.User.FirstOrDefaultAsync(e => e.Id == userToShareId, cancellationToken) is not { } userToShare)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "USER_NOT_FOUND", userToShareId),
                     parseMode: ParseMode.Html,
@@ -120,7 +120,7 @@ internal sealed class GrantBotCommand(
                 return (userToShare, activeBudget);
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_ACTIVE_BUDGET",
                     parseMode: ParseMode.Html,
@@ -134,7 +134,7 @@ internal sealed class GrantBotCommand(
                 .ToListAsync(cancellationToken) is not { Count: > 0 } budgets)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "BUDGET_NOT_FOUND", budgetName.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -168,7 +168,7 @@ internal sealed class GrantBotCommand(
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
                     await botWrapper
-                        .SendTextMessageAsync(
+                        .SendMessage(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,

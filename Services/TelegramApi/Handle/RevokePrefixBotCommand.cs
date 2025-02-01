@@ -38,7 +38,7 @@ internal sealed class RevokePrefixBotCommand(
                     cancellationToken) is not { } participant)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_REVOKED", userToUnShare.GetFullNameLink(),
                         budgetToUnShare.Name.EscapeHtml()),
@@ -50,7 +50,7 @@ internal sealed class RevokePrefixBotCommand(
         if (budgetToUnShare.CreatedBy == userToUnShare.Id)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "REVOKING_RESTRICTED", userToUnShare.GetFullNameLink(),
                         budgetToUnShare.Name.EscapeHtml()),
@@ -77,7 +77,7 @@ internal sealed class RevokePrefixBotCommand(
 
         foreach (var participantId in participantIds)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participantId,
                     string.Format(TR.L + "REVOKED_FOR_USER", budgetToUnShare.Name.EscapeHtml(),
                         userToUnShare.GetFullNameLink(), currentUserService.TelegramUser.GetFullNameLink()),
@@ -85,7 +85,7 @@ internal sealed class RevokePrefixBotCommand(
                     cancellationToken: cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 userToUnShare.Id,
                 string.Format(TR.L + "REVOKED_FOR_YOU", budgetToUnShare.Name.EscapeHtml(),
                     currentUserService.TelegramUser.GetFullNameLink()),

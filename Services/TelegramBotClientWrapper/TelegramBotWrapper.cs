@@ -13,79 +13,99 @@ internal sealed class TelegramBotWrapper(
 {
     public ITelegramBotClient BotClient => botClient;
 
-    public async Task<Message> SendTextMessageAsync(ChatId chatId, string text, int? messageThreadId = default,
-        ParseMode? parseMode = default,
-        IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default,
-        bool? disableNotification = default,
-        bool? protectContent = default, int? replyToMessageId = default, bool? allowSendingWithoutReply = default,
-        IReplyMarkup? replyMarkup = default, CancellationToken cancellationToken = default)
+    public async Task<Message> SendMessage(
+        ChatId chatId,
+        string text,
+        ParseMode parseMode = default,
+        ReplyParameters? replyParameters = null,
+        IReplyMarkup? replyMarkup = null,
+        LinkPreviewOptions? linkPreviewOptions = null,
+        int? messageThreadId = null,
+        IEnumerable<MessageEntity>? entities = null,
+        bool disableNotification = false,
+        bool protectContent = false,
+        string? messageEffectId = null,
+        string? businessConnectionId = null,
+        bool allowPaidBroadcast = false,
+        CancellationToken cancellationToken = default)
     {
         using var trace = tracee.Fixed("submit_total");
+        
+        var entitiesArray = entities?.ToArray();
         var message = await botClient
-            .SendTextMessageAsync(
+            .SendMessage(
                 chatId,
-                text.Trim(),
-                messageThreadId,
+                text,
                 parseMode,
-                // ReSharper disable once PossibleMultipleEnumeration
-                entities,
-                disableWebPagePreview,
+                replyParameters,
+                replyMarkup,
+                linkPreviewOptions,
+                messageThreadId,
+                entitiesArray,
                 disableNotification,
                 protectContent,
-                replyToMessageId,
-                allowSendingWithoutReply,
-                replyMarkup,
+                messageEffectId,
+                businessConnectionId,
+                allowPaidBroadcast,
                 cancellationToken);
 
         if (AppConfiguration.DebugResponseTime)
         {
             await botClient
-                .EditMessageTextAsync(
+                .EditMessageText(
                     chatId,
-                    message.MessageId,
-                    $"{text.Trim()}\n\n{tracee.Milliseconds} ms",
+                    message.Id,
+                    text,
                     parseMode,
-                    // ReSharper disable once PossibleMultipleEnumeration
-                    entities,
-                    disableWebPagePreview,
+                    entitiesArray,
+                    linkPreviewOptions,
                     replyMarkup as InlineKeyboardMarkup,
+                    businessConnectionId,
                     cancellationToken);
         }
         
         return message;
     }
 
-    public async Task<Message> EditMessageTextAsync(ChatId chatId, int messageId, string text,
-        ParseMode? parseMode = default,
-        IEnumerable<MessageEntity>? entities = default, bool? disableWebPagePreview = default,
-        InlineKeyboardMarkup? replyMarkup = default,
+    public async Task<Message> EditMessageText(
+        ChatId chatId,
+        int messageId,
+        string text,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? entities = null,
+        LinkPreviewOptions? linkPreviewOptions = null,
+        InlineKeyboardMarkup? replyMarkup = null,
+        string? businessConnectionId = null,
         CancellationToken cancellationToken = default)
     {
         using var trace = tracee.Fixed("submit_total");
+        
+        var entitiesArray = entities?.ToArray();
         var message = await botClient
-            .EditMessageTextAsync(
+            .EditMessageText(
                 chatId,
                 messageId,
                 text.Trim(),
                 parseMode,
-                // ReSharper disable once PossibleMultipleEnumeration
-                entities,
-                disableWebPagePreview,
+                entitiesArray,
+                linkPreviewOptions,
                 replyMarkup,
+                businessConnectionId,
                 cancellationToken);
 
         if (AppConfiguration.DebugResponseTime)
         {
             await botClient
-                .EditMessageTextAsync(
+                .EditMessageText(
                     chatId,
                     message.MessageId,
                     $"{text.Trim()}\n\n{tracee.Milliseconds} ms",
                     parseMode,
                     // ReSharper disable once PossibleMultipleEnumeration
-                    entities,
-                    disableWebPagePreview,
+                    entitiesArray,
+                    linkPreviewOptions,
                     replyMarkup,
+                    businessConnectionId,
                     cancellationToken);
         }
         

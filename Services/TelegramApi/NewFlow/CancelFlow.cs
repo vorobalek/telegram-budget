@@ -70,7 +70,7 @@ internal sealed class CancelFlow(
         using var _ = tracee.Scoped("submit");
         
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 text,
                 parseMode: ParseMode.Html,

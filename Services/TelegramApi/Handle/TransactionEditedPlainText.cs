@@ -55,7 +55,7 @@ internal sealed class TransactionEditedPlainText(
 
         foreach (var participating in candidateTransaction.Budget.Participating)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participating.UserId,
                     $"💰 <b>{candidateTransaction.Budget.Name.EscapeHtml()}</b> 💰" +
                     Environment.NewLine +
@@ -87,9 +87,13 @@ internal sealed class TransactionEditedPlainText(
                             : TR.L + candidateTransaction.CreatedAt.Add(user.TimeZone) +
                               AppConfiguration.DateTimeFormat,
                         currentUserService.TelegramUser.GetFullNameLink()),
-                    replyToMessageId: participatingConfirmationMap.TryGetValue(participating.UserId,
+                    replyParameters: participatingConfirmationMap.TryGetValue(
+                        participating.UserId,
                         out var messageId)
-                        ? messageId
+                        ? new ReplyParameters
+                        {
+                            MessageId = messageId
+                        }
                         : null,
                     parseMode: ParseMode.Html,
                     replyMarkup: Keyboards.ShowMainInline,

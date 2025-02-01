@@ -25,7 +25,7 @@ internal sealed class HistoryBotCommand(
         if (!budget.Transactions.Any())
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "NO_TRANSACTIONS", budget.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -68,7 +68,7 @@ internal sealed class HistoryBotCommand(
                 pageBuilder.AppendLine(currentString);
             }, async (pageContent, token) =>
                 await botWrapper
-                    .SendTextMessageAsync(
+                    .SendMessage(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,
@@ -89,7 +89,7 @@ internal sealed class HistoryBotCommand(
             errorMessageBuilder.AppendLine(TR.L + "HISTORY_EXAMPLE");
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
                     parseMode: ParseMode.Html,
@@ -108,7 +108,7 @@ internal sealed class HistoryBotCommand(
             errorMessageBuilder.AppendLine(TR.L + "HISTORY_EXAMPLE");
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
                     parseMode: ParseMode.Html,
@@ -139,7 +139,7 @@ internal sealed class HistoryBotCommand(
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
                     await botWrapper
-                        .SendTextMessageAsync(
+                        .SendMessage(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,

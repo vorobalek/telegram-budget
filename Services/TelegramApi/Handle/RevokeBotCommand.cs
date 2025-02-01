@@ -27,7 +27,7 @@ internal sealed class RevokeBotCommand(
                     cancellationToken) is not { } participant)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_REVOKED", args.UserToUnShare.GetFullNameLink(),
                         args.BudgetToUnShare.Name.EscapeHtml()),
@@ -39,7 +39,7 @@ internal sealed class RevokeBotCommand(
         if (args.BudgetToUnShare.CreatedBy == args.UserToUnShare.Id)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "REVOKING_RESTRICTED", args.UserToUnShare.GetFullNameLink(),
                         args.BudgetToUnShare.Name.EscapeHtml()),
@@ -66,7 +66,7 @@ internal sealed class RevokeBotCommand(
 
         foreach (var participantId in participantIds)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participantId,
                     string.Format(TR.L + "REVOKED_FOR_USER", args.BudgetToUnShare.Name.EscapeHtml(),
                         args.UserToUnShare.GetFullNameLink(), currentUserService.TelegramUser.GetFullNameLink()),
@@ -74,7 +74,7 @@ internal sealed class RevokeBotCommand(
                     cancellationToken: cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 args.UserToUnShare.Id,
                 string.Format(TR.L + "REVOKED_FOR_YOU", args.BudgetToUnShare.Name.EscapeHtml(),
                     currentUserService.TelegramUser.GetFullNameLink()),
@@ -92,7 +92,7 @@ internal sealed class RevokeBotCommand(
         if (string.IsNullOrWhiteSpace(userToUnShareIdString))
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     TR.L + "REVOKE_EXAMPLE",
                     parseMode: ParseMode.Html,
@@ -103,7 +103,7 @@ internal sealed class RevokeBotCommand(
         if (!long.TryParse(userToUnShareIdString, out var userToShareId))
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "INVALID_USER_ID", userToUnShareIdString.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -114,7 +114,7 @@ internal sealed class RevokeBotCommand(
         if (await db.User.FirstOrDefaultAsync(e => e.Id == userToShareId, cancellationToken) is not { } userToShare)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "USER_NOT_FOUND", userToShareId),
                     parseMode: ParseMode.Html,
@@ -129,7 +129,7 @@ internal sealed class RevokeBotCommand(
                 return (userToShare, activeBudget);
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_ACTIVE_BUDGET",
                     parseMode: ParseMode.Html,
@@ -143,7 +143,7 @@ internal sealed class RevokeBotCommand(
                 .ToListAsync(cancellationToken) is not { Count: > 0 } budgets)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "BUDGET_NOT_FOUND", budgetName.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -177,7 +177,7 @@ internal sealed class RevokeBotCommand(
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
                     await botWrapper
-                        .SendTextMessageAsync(
+                        .SendMessage(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,

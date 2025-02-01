@@ -34,7 +34,7 @@ internal sealed class MainFlow(
         {
             Command => ProcessAsync(cancellationToken, context.CallbackQuery.Message!.MessageId),
             CommandShow => Task.WhenAll(
-                botWrapper.EditMessageTextAsync(
+                botWrapper.EditMessageText(
                     currentUserService.TelegramUser.Id,
                     context.CallbackQuery.Message!.MessageId,
                     context.CallbackQuery.Message!.Text!,
@@ -203,13 +203,13 @@ internal sealed class MainFlow(
         using var _ = tracee.Scoped("submit");
 
         await (callbackQueryMessageId is null
-            ? botWrapper.SendTextMessageAsync(
+            ? botWrapper.SendMessage(
                 currentUserService.TelegramUser.Id,
                 reply,
                 parseMode: ParseMode.Html,
                 replyMarkup: Keyboards.BuildMainInline(hasActiveBudget),
                 cancellationToken: cancellationToken)
-            : botWrapper.EditMessageTextAsync(
+            : botWrapper.EditMessageText(
                 currentUserService.TelegramUser.Id,
                 text: reply,
                 messageId: callbackQueryMessageId.Value,

@@ -23,7 +23,7 @@ internal sealed class DeleteBotCommand(
         if (budget.CreatedBy != currentUserService.TelegramUser.Id)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "DELETION_RESTRICTED", budget.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -41,7 +41,7 @@ internal sealed class DeleteBotCommand(
 
         foreach (var participant in participants)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participant.UserId,
                     string.Format(TR.L + "DELETED", budget.Name.EscapeHtml(),
                         currentUserService.TelegramUser.GetFullNameLink()),
@@ -65,7 +65,7 @@ internal sealed class DeleteBotCommand(
             errorMessageBuilder.AppendLine(TR.L + "DELETE_EXAMPLE");
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
                     parseMode: ParseMode.Html,
@@ -84,7 +84,7 @@ internal sealed class DeleteBotCommand(
             errorMessageBuilder.AppendLine(TR.L + "DELETE_EXAMPLE");
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     errorMessageBuilder.ToString(),
                     parseMode: ParseMode.Html,
@@ -115,7 +115,7 @@ internal sealed class DeleteBotCommand(
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
                     await botWrapper
-                        .SendTextMessageAsync(
+                        .SendMessage(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,

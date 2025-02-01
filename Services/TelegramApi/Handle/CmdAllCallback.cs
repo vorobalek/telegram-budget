@@ -40,12 +40,15 @@ internal sealed class CmdAllCallback(
         stringBuilder.Append(TR.L + "HELP_OUTRO");
 
         await botWrapper
-            .EditMessageTextAsync(
+            .EditMessageText(
                 currentUserService.TelegramUser.Id,
                 callbackQueryMessage.MessageId,
                 stringBuilder.ToString(),
                 ParseMode.Html,
-                disableWebPagePreview: true,
+                linkPreviewOptions: new LinkPreviewOptions
+                {
+                    IsDisabled = true
+                },
                 replyMarkup: Keyboards.BackToMainInlineOld,
                 cancellationToken: cancellationToken);
     }

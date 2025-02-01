@@ -53,7 +53,7 @@ internal sealed class CreateFlow(
         using var _ = tracee.Scoped("submit");
 
         return await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 text,
                 parseMode: ParseMode.Html,

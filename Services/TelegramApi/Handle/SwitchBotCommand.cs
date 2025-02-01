@@ -28,7 +28,7 @@ internal sealed class SwitchBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "SWITCHED", budget.Name.EscapeHtml()) +
                 ' ' +
@@ -48,7 +48,7 @@ internal sealed class SwitchBotCommand(
         if (!string.IsNullOrWhiteSpace(data)) return data;
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 TR.L + "SWITCH_EXAMPLE",
                 parseMode: ParseMode.Html,
@@ -66,7 +66,7 @@ internal sealed class SwitchBotCommand(
                 .ToListAsync(cancellationToken) is not { Count: > 0 } budgets)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "BUDGET_NOT_FOUND", budgetName.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -100,7 +100,7 @@ internal sealed class SwitchBotCommand(
                     pageBuilder.AppendLine(currentString);
                 }, async (pageContent, token) =>
                     await botWrapper
-                        .SendTextMessageAsync(
+                        .SendMessage(
                             currentUserService.TelegramUser.Id,
                             pageContent,
                             parseMode: ParseMode.Html,

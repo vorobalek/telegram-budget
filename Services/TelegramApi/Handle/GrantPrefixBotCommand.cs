@@ -39,7 +39,7 @@ internal sealed class GrantPrefixBotCommand(
                     cancellationToken))
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "ALREADY_GRANTED", userToShare.GetFullNameLink(),
                         budgetToShare.Name.EscapeHtml()),
@@ -71,7 +71,7 @@ internal sealed class GrantPrefixBotCommand(
 
         foreach (var participantId in participantIds)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participantId,
                     string.Format(TR.L + "GRANTED_TO_USER", budgetToShare.Name.EscapeHtml(),
                         userToShare.GetFullNameLink(), currentUserService.TelegramUser.GetFullNameLink()),
@@ -79,7 +79,7 @@ internal sealed class GrantPrefixBotCommand(
                     cancellationToken: cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 userToShare.Id,
                 string.Format(TR.L + "GRANTED_TO_YOU", budgetToShare.Name.EscapeHtml(),
                     currentUserService.TelegramUser.GetFullNameLink()),

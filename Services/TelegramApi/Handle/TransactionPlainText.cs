@@ -29,7 +29,7 @@ internal sealed class TransactionPlainText(
         if (user.ActiveBudget is null)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_ACTIVE_BUDGET",
                     parseMode: ParseMode.Html,
@@ -58,7 +58,7 @@ internal sealed class TransactionPlainText(
         foreach (var participating in user.ActiveBudget.Participating)
         {
             var confirmationMessage = await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participating.UserId,
                     $"💰 <b>{user.ActiveBudget.Name.EscapeHtml()}</b> 💰" +
                     Environment.NewLine +
@@ -79,8 +79,11 @@ internal sealed class TransactionPlainText(
                             ? TR.L + newTransaction.CreatedAt + AppConfiguration.DateTimeFormat + " UTC"
                             : TR.L + newTransaction.CreatedAt.Add(user.TimeZone) + AppConfiguration.DateTimeFormat,
                         currentUserService.TelegramUser.GetFullNameLink()),
-                    replyToMessageId: participating.UserId == currentUserService.TelegramUser.Id
-                        ? message.MessageId
+                    replyParameters: participating.UserId == currentUserService.TelegramUser.Id
+                        ? new ReplyParameters
+                        {
+                            MessageId = message.MessageId
+                        }
                         : null,
                     parseMode: ParseMode.Html,
                     replyMarkup: Keyboards.ShowMainInline,

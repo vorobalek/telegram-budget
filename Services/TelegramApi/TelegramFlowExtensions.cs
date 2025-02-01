@@ -217,7 +217,7 @@ public static class TelegramFlowExtensions
                                     .ForText(text => text
                                         .WithInjection(sp.GetRequiredService<ITelegramBotClient>())
                                         .WithAsyncProcessing((context, injected, token) =>
-                                            injected.SendChatActionAsync(
+                                            injected.SendChatAction(
                                                 context.Message.From!.Id,
                                                 ChatAction.Typing,
                                                 cancellationToken: token))))
@@ -229,7 +229,7 @@ public static class TelegramFlowExtensions
                                         if (notImplementedCommands.Any(e =>
                                                 context.CallbackQuery.Data?.StartsWith(e) ?? false))
                                             return;
-                                        await injected.AnswerCallbackQueryAsync(
+                                        await injected.AnswerCallbackQuery(
                                             context.CallbackQuery.Id,
                                             cancellationToken: token);
                                     }))
@@ -237,7 +237,7 @@ public static class TelegramFlowExtensions
                                     .ForText(text => text
                                         .WithInjection(sp.GetRequiredService<ITelegramBotClient>())
                                         .WithAsyncProcessing((context, injected, token) =>
-                                            injected.SendChatActionAsync(
+                                            injected.SendChatAction(
                                                 context.EditedMessage.From!.Id,
                                                 ChatAction.Typing,
                                                 cancellationToken: token))))

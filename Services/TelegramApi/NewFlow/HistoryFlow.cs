@@ -237,7 +237,7 @@ internal sealed class HistoryFlow(
             pageCount);
 
         await botWrapper
-            .EditMessageTextAsync(
+            .EditMessageText(
                 currentUserService.TelegramUser.Id,
                 messageId,
                 text,

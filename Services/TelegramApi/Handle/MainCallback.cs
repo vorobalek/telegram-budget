@@ -16,7 +16,7 @@ internal sealed class MainCallback(
         if (callbackQueryMessage is null) return;
 
         await botWrapper
-            .EditMessageTextAsync(
+            .EditMessageText(
                 currentUserService.TelegramUser.Id,
                 callbackQueryMessage.MessageId,
                 TR.L + "HELP_GREETING",

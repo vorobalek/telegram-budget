@@ -23,7 +23,7 @@ internal sealed class DeletePrefixBotCommand(
         if (budget.CreatedBy != currentUserService.TelegramUser.Id)
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "DELETION_RESTRICTED", budget.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -41,7 +41,7 @@ internal sealed class DeletePrefixBotCommand(
 
         foreach (var participant in participants)
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     participant.UserId,
                     string.Format(TR.L + "DELETED", budget.Name.EscapeHtml(),
                         currentUserService.TelegramUser.GetFullNameLink()),

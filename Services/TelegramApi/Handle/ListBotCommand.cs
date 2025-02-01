@@ -30,7 +30,7 @@ internal sealed class ListBotCommand(
         if (!budgets.Any())
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     TR.L + "NO_BUDGETS",
                     parseMode: ParseMode.Html,
@@ -62,7 +62,7 @@ internal sealed class ListBotCommand(
                 pageBuilder.AppendLine(currentString);
             }, async (pageContent, token) =>
                 await botWrapper
-                    .SendTextMessageAsync(
+                    .SendMessage(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,

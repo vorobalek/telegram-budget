@@ -9,31 +9,34 @@ internal interface ITelegramBotWrapper
 {
     ITelegramBotClient BotClient { get; }
 
-    /// <inheritdoc cref="Telegram.Bot.TelegramBotClientExtensions.SendTextMessageAsync"/>
-    Task<Message> SendTextMessageAsync(
+    /// <inheritdoc cref="Telegram.Bot.TelegramBotClientExtensions.SendMessage" />
+    Task<Message> SendMessage(
         ChatId chatId,
         string text,
-        int? messageThreadId = default,
-        ParseMode? parseMode = default,
-        IEnumerable<MessageEntity>? entities = default,
-        bool? disableWebPagePreview = default,
-        bool? disableNotification = default,
-        bool? protectContent = default,
-        int? replyToMessageId = default,
-        bool? allowSendingWithoutReply = default,
-        IReplyMarkup? replyMarkup = default,
-        CancellationToken cancellationToken = default
-    );
+        ParseMode parseMode = default,
+        ReplyParameters? replyParameters = null,
+        IReplyMarkup? replyMarkup = null,
+        LinkPreviewOptions? linkPreviewOptions = null,
+        int? messageThreadId = null,
+        IEnumerable<MessageEntity>? entities = null,
+        bool disableNotification = false,
+        bool protectContent = false,
+        string? messageEffectId = null,
+        string? businessConnectionId = null,
+        bool allowPaidBroadcast = false,
+        CancellationToken cancellationToken = default);
 
-    /// <inheritdoc cref="Telegram.Bot.TelegramBotClientExtensions.EditMessageTextAsync(ITelegramBotClient, ChatId, int, string, ParseMode?, IEnumerable{MessageEntity}?, bool?, InlineKeyboardMarkup?, CancellationToken)"/>
-    Task<Message> EditMessageTextAsync(
+    /// <inheritdoc
+    ///     cref="Telegram.Bot.TelegramBotClientExtensions.EditMessageText(ITelegramBotClient, ChatId, int, string, ParseMode, IEnumerable{MessageEntity}?, LinkPreviewOptions?, InlineKeyboardMarkup?, string?, CancellationToken)" />
+    Task<Message> EditMessageText(
         ChatId chatId,
         int messageId,
         string text,
-        ParseMode? parseMode = default,
-        IEnumerable<MessageEntity>? entities = default,
-        bool? disableWebPagePreview = default,
-        InlineKeyboardMarkup? replyMarkup = default,
+        ParseMode parseMode = default,
+        IEnumerable<MessageEntity>? entities = null,
+        LinkPreviewOptions? linkPreviewOptions = null,
+        InlineKeyboardMarkup? replyMarkup = null,
+        string? businessConnectionId = null,
         CancellationToken cancellationToken = default
     );
 }

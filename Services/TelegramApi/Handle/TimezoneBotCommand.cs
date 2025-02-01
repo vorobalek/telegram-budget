@@ -38,7 +38,7 @@ internal sealed class TimezoneBotCommand(
             responseMessageBuilder.AppendLine(TR.L + "TIMEZONE_EXAMPLE");
 
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     responseMessageBuilder.ToString(),
                     parseMode: ParseMode.Html,
@@ -62,7 +62,7 @@ internal sealed class TimezoneBotCommand(
                 TR.L + dateTime.UtcNow().DateTime.Add(user.TimeZone) + AppConfiguration.DateTimeFormat));
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 responseMessageBuilder.ToString(),
                 parseMode: ParseMode.Html,

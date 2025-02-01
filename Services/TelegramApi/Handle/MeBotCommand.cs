@@ -11,7 +11,7 @@ internal sealed class MeBotCommand(
     public async Task ProcessAsync(CancellationToken cancellationToken)
     {
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 $"<code>{currentUserService.TelegramUser.Id}</code>",
                 parseMode: ParseMode.Html,

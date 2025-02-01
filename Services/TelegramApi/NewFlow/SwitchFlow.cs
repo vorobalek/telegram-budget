@@ -168,7 +168,7 @@ internal sealed class SwitchFlow(
         {
             await Task.WhenAll(
                 botWrapper
-                    .EditMessageTextAsync(
+                    .EditMessageText(
                         currentUserService.TelegramUser.Id,
                         messageId,
                         text,
@@ -183,7 +183,7 @@ internal sealed class SwitchFlow(
         var keyboard = GetKeyboard(availableBudgets);
 
         await botWrapper
-            .EditMessageTextAsync(
+            .EditMessageText(
                 currentUserService.TelegramUser.Id,
                 messageId,
                 text,

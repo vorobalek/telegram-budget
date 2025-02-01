@@ -43,7 +43,7 @@ internal sealed class CreateBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "CREATED", budgetName.EscapeHtml()),
                 parseMode: ParseMode.Html,
@@ -56,7 +56,7 @@ internal sealed class CreateBotCommand(
         if (!string.IsNullOrWhiteSpace(budgetName)) return budgetName;
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 TR.L + "CREATE_EXAMPLE",
                 parseMode: ParseMode.Html,
@@ -70,7 +70,7 @@ internal sealed class CreateBotCommand(
         if (!budgetAlreadyExists) return false;
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "ALREADY_EXISTS", budgetName.EscapeHtml()),
                 parseMode: ParseMode.Html,

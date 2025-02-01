@@ -25,7 +25,7 @@ internal sealed class HistoryPrefixBotCommand(
         if (!budget.Transactions.Any())
         {
             await botWrapper
-                .SendTextMessageAsync(
+                .SendMessage(
                     currentUserService.TelegramUser.Id,
                     string.Format(TR.L + "NO_TRANSACTIONS", budget.Name.EscapeHtml()),
                     parseMode: ParseMode.Html,
@@ -68,7 +68,7 @@ internal sealed class HistoryPrefixBotCommand(
                 pageBuilder.AppendLine(currentString);
             }, async (pageContent, token) =>
                 await botWrapper
-                    .SendTextMessageAsync(
+                    .SendMessage(
                         currentUserService.TelegramUser.Id,
                         pageContent,
                         parseMode: ParseMode.Html,

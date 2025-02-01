@@ -1,3 +1,4 @@
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBudget.Services.CurrentUser;
 using TelegramBudget.Services.TelegramBotClientWrapper;
@@ -11,11 +12,14 @@ internal sealed class StartBotCommand(
     public async Task ProcessAsync(CancellationToken cancellationToken)
     {
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 TR.L + "HELP_GREETING",
                 parseMode: ParseMode.Html,
-                disableWebPagePreview: true,
+                linkPreviewOptions: new LinkPreviewOptions
+                {
+                    IsDisabled = true
+                },
                 replyMarkup: Keyboards.CmdAllInline,
                 cancellationToken: cancellationToken);
     }

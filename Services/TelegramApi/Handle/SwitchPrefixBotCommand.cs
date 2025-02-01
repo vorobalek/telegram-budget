@@ -26,7 +26,7 @@ internal sealed class SwitchPrefixBotCommand(
         await db.SaveChangesAsync(cancellationToken);
 
         await botWrapper
-            .SendTextMessageAsync(
+            .SendMessage(
                 currentUserService.TelegramUser.Id,
                 string.Format(TR.L + "SWITCHED", budget.Name.EscapeHtml()) +
                 ' ' +

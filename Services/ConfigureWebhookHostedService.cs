@@ -16,18 +16,18 @@ internal sealed class ConfigureWebhookHostedService(
 
         var webhookAddress = $"{AppConfiguration.Url}/bot";
         logger.LogInformation("Setting webhook: {WebhookAddress}", webhookAddress);
-        await botClient.SetWebhookAsync(
+        await botClient.SetWebhook(
             webhookAddress,
             secretToken: TelegramBotConfiguration.WebhookSecretToken,
-            allowedUpdates: new[]
-            {
+            allowedUpdates:
+            [
                 UpdateType.Message,
                 UpdateType.EditedMessage,
                 UpdateType.CallbackQuery
-            },
+            ],
             cancellationToken: cancellationToken);
         await botClient
-            .SetMyCommandsAsync(
+            .SetMyCommands(
                 TelegramBotConfiguration.DeclaredCommands,
                 cancellationToken: cancellationToken);
     }
@@ -39,6 +39,6 @@ internal sealed class ConfigureWebhookHostedService(
 
         // Remove webhook upon app shutdown
         logger.LogInformation("Removing webhook");
-        await botClient.DeleteWebhookAsync(cancellationToken: cancellationToken);
+        await botClient.DeleteWebhook(cancellationToken: cancellationToken);
     }
 }
