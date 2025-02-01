@@ -32,11 +32,11 @@ internal sealed class MainFlow(
     {
         await (context.Data switch
         {
-            Command => ProcessAsync(cancellationToken, context.CallbackQuery.Message!.MessageId),
+            Command => ProcessAsync(cancellationToken, context.CallbackQuery.Message!.Id),
             CommandShow => Task.WhenAll(
                 botWrapper.EditMessageText(
                     currentUserService.TelegramUser.Id,
-                    context.CallbackQuery.Message!.MessageId,
+                    context.CallbackQuery.Message!.Id,
                     context.CallbackQuery.Message!.Text!,
                     entities: context.CallbackQuery.Message!.Entities,
                     replyMarkup: null,

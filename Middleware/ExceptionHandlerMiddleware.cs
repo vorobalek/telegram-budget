@@ -9,7 +9,9 @@ internal sealed class ExceptionHandlerMiddleware(ICurrentUserService currentUser
         RequestDelegate next)
     {
         context.Request.EnableBuffering();
-        using var streamReader = new StreamReader(context.Request.Body);
+        using var streamReader = new StreamReader(
+            context.Request.Body,
+            leaveOpen: true);
         var body = await streamReader.ReadToEndAsync();
         context.Request.Body.Position = 0;
         try

@@ -35,7 +35,7 @@ internal sealed class SwitchFlow(
             cancellationToken);
 
         await SubmitReplyAsync(
-            context.CallbackQuery.Message!.MessageId,
+            context.CallbackQuery.Message!.Id,
             text,
             availableBudgets,
             cancellationToken);

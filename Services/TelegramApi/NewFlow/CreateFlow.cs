@@ -38,7 +38,7 @@ internal sealed class CreateFlow(
         var user = await GetUserAsync(cancellationToken);
         text ??= $"{TR.L + "_CREATE_REQUEST_BUDGET_NAME_HEADER"}{TR.L + "_CREATE_REQUEST_BUDGET_NAME"}";
         var message = await SubmitAsync(text, true, cancellationToken);
-        await UpdateUserAsync(user, message.MessageId, cancellationToken);
+        await UpdateUserAsync(user, message.Id, cancellationToken);
     }
 
     private async Task<User> GetUserAsync(CancellationToken cancellationToken)

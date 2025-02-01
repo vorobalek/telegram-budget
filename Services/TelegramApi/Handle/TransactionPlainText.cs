@@ -43,7 +43,7 @@ internal sealed class TransactionPlainText(
         {
             Amount = amount,
             BudgetId = user.ActiveBudget.Id,
-            MessageId = message.MessageId,
+            MessageId = message.Id,
             Comment = text.Length > rawAmount.Length
                 ? text[rawAmount.Length..].Trim().Truncate(250)
                 : null
@@ -82,7 +82,7 @@ internal sealed class TransactionPlainText(
                     replyParameters: participating.UserId == currentUserService.TelegramUser.Id
                         ? new ReplyParameters
                         {
-                            MessageId = message.MessageId
+                            MessageId = message.Id
                         }
                         : null,
                     parseMode: ParseMode.Html,
@@ -90,7 +90,7 @@ internal sealed class TransactionPlainText(
                     cancellationToken: cancellationToken);
             await db.TransactionConfirmation.AddAsync(new TransactionConfirmation
             {
-                MessageId = confirmationMessage.MessageId,
+                MessageId = confirmationMessage.Id,
                 RecipientId = participating.UserId,
                 Transaction = newTransaction
             }, cancellationToken);

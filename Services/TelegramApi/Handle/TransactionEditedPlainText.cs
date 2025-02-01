@@ -26,7 +26,7 @@ internal sealed class TransactionEditedPlainText(
             .Transaction
             .FirstOrDefaultAsync(e =>
                     e.CreatedBy == currentUserService.TelegramUser.Id &&
-                    e.MessageId == editedMessage.MessageId,
+                    e.MessageId == editedMessage.Id,
                 cancellationToken);
 
         if (candidateTransaction is null) return;

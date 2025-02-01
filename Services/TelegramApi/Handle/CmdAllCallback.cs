@@ -42,7 +42,7 @@ internal sealed class CmdAllCallback(
         await botWrapper
             .EditMessageText(
                 currentUserService.TelegramUser.Id,
-                callbackQueryMessage.MessageId,
+                callbackQueryMessage.Id,
                 stringBuilder.ToString(),
                 ParseMode.Html,
                 linkPreviewOptions: new LinkPreviewOptions

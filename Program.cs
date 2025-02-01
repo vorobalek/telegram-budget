@@ -64,7 +64,7 @@ var host = Host
                                   context.Configuration.GetConnectionString("Default"));
             });
             services.AddCommonDatabaseFeatures<ApplicationDbContext>();
-            services.AddControllers().AddNewtonsoftJson();
+            services.ConfigureTelegramBotMvc().AddControllers().AddNewtonsoftJson();
             services.AddHealthChecks();
 
             services.AddSingleton<GlobalCancellationTokenSource>();
@@ -75,7 +75,7 @@ var host = Host
             services.AddHttpContextAccessor();
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
-            services.AddTracee();
+            services.AddTracee("api");
         });
 
         builder.ConfigureLogging(logging =>
@@ -93,7 +93,7 @@ var host = Host
         {
             app.UseHealthChecks("/health");
             app.UseTracee(
-                "api",
+                "request",
                 postRequestAsync: tracee =>
                 {
                     tracee.CollectAll(LogLevel.Debug);

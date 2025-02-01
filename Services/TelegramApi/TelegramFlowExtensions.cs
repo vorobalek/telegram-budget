@@ -307,7 +307,7 @@ public static class TelegramFlowExtensions
     {
         return services
             .AddCallbackData<T>((flow, context, token) =>
-                    context.CallbackQuery.Message?.MessageId is not null
+                    context.CallbackQuery.Message?.Id is not null
                         ? flow.ProcessAsync(context, token)
                         : Task.CompletedTask,
                 targetCommands);
@@ -319,7 +319,7 @@ public static class TelegramFlowExtensions
     {
         return services
             .AddCallbackDataPrefix<T>((flow, context, token) =>
-                    context.CallbackQuery.Message?.MessageId is not null
+                    context.CallbackQuery.Message?.Id is not null
                         ? flow.ProcessAsync(context, token)
                         : Task.CompletedTask,
                 targetCommands);

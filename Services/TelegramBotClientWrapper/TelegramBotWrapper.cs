@@ -35,7 +35,7 @@ internal sealed class TelegramBotWrapper(
         var message = await botClient
             .SendMessage(
                 chatId,
-                text,
+                text.Trim(),
                 parseMode,
                 replyParameters,
                 replyMarkup,
@@ -55,7 +55,7 @@ internal sealed class TelegramBotWrapper(
                 .EditMessageText(
                     chatId,
                     message.Id,
-                    text,
+                    $"{text.Trim()}\n\n{tracee.Milliseconds} ms",
                     parseMode,
                     entitiesArray,
                     linkPreviewOptions,
@@ -98,7 +98,7 @@ internal sealed class TelegramBotWrapper(
             await botClient
                 .EditMessageText(
                     chatId,
-                    message.MessageId,
+                    message.Id,
                     $"{text.Trim()}\n\n{tracee.Milliseconds} ms",
                     parseMode,
                     // ReSharper disable once PossibleMultipleEnumeration

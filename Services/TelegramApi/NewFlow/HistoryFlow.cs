@@ -36,7 +36,7 @@ internal sealed class HistoryFlow(
             cancellationToken);
 
         await SubmitReplyAsync(
-            context.CallbackQuery.Message!.MessageId,
+            context.CallbackQuery.Message!.Id,
             text,
             budgetSlug,
             pageNumber,
