@@ -91,6 +91,8 @@ var host = Host
 
         builder.Configure(app =>
         {
+            if (!string.IsNullOrWhiteSpace(AppConfiguration.PathBase))
+                app.UsePathBase(AppConfiguration.PathBase);
             app.UseHealthChecks("/health");
             app.UseTracee(
                 "request",

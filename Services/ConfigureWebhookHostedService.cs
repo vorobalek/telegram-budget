@@ -14,7 +14,9 @@ internal sealed class ConfigureWebhookHostedService(
         using var scope = serviceScopeFactory.CreateScope();
         var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
-        var webhookAddress = $"{AppConfiguration.Url}/bot";
+        var webhookAddress = string.IsNullOrWhiteSpace(AppConfiguration.PathBase)
+            ? $"{AppConfiguration.Url}/bot"
+            : $"{AppConfiguration.Url}{AppConfiguration.PathBase}/bot";
         logger.LogInformation("Setting webhook: {WebhookAddress}", webhookAddress);
         await botClient.SetWebhook(
             webhookAddress,
