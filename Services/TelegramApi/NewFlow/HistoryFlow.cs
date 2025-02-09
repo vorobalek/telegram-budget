@@ -143,6 +143,7 @@ internal sealed class HistoryFlow(
                 AuthorFirstName = e.Author.FirstName,
                 AuthorLastName = e.Author.LastName
             })
+            .OrderBy(e => e.CreatedAt)
             .ToArrayAsync(cancellationToken);
 
         var currentSum = 0m;
